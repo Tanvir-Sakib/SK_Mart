@@ -4,10 +4,17 @@ const Category = require("../models/category");
 // Admin-only: create a product
 exports.createProduct = async (req, res) => {
   try {
-    // Validate required fields
+    console.log("Request body:", req.body);
+    console.log("Uploaded file:", req.file);
+
     const { title, description, price, category, stock } = req.body;
+    
+    // Validate required fields
     if (!title || !description || !price || !category || !stock) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({ 
+        message: "All fields are required",
+        missing: { title: !title, description: !description, price: !price, category: !category, stock: !stock }
+      });
     }
 
     // Check if category exists
@@ -16,17 +23,19 @@ exports.createProduct = async (req, res) => {
       return res.status(404).json({ message: "Category not found" });
     }
 
-    // Handle image upload
-    const imagePath = req.file ? `/uploads/${req.file.filename}` : "";
+    // Check if image was uploaded
+    if (!req.file) {
+      return res.status(400).json({ message: "Image is required" });
+    }
 
-    // Create product
+    // Create product with the full image path including extension
     const product = await Product.create({
       title,
       description,
-      price,
+      price: Number(price),
       category,
-      stock,
-      image: imagePath,
+      stock: Number(stock),
+      image: `/uploads/${req.file.filename}`, // This will now have extension
     });
 
     // Populate category for response
@@ -35,12 +44,17 @@ exports.createProduct = async (req, res) => {
       "name"
     );
 
-    res.status(201).json(populatedProduct);
+    res.status(201).json({
+      success: true,
+      product: populatedProduct,
+      imageUrl: `http://localhost:5000/uploads/${req.file.filename}`
+    });
   } catch (err) {
     console.error("CREATE PRODUCT ERROR:", err);
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
+    res.status(500).json({ 
+      message: "Internal Server Error", 
+      error: err.message 
+    });
   }
 };
 
