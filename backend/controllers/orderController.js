@@ -5,37 +5,61 @@ const Product = require("../models/product");
 exports.createOrder = async (req, res) => {
   try {
     const userId = req.user.id;
+    const { shippingAddress, paymentMethod } = req.body;
 
-    const cart = await Cart.findOne({ user: userId }).populate(
-      "items.product"
-    );
+    // Get user's cart with populated products
+    const cart = await Cart.findOne({ user: userId }).populate("items.product");
 
-    if (!cart || cart.items.length === 0)
+    if (!cart || cart.items.length === 0) {
       return res.status(400).json({ message: "Cart is empty" });
+    }
 
     let totalAmount = 0;
+    const orderItems = [];
 
-    const orderItems = cart.items.map((item) => {
-      totalAmount += item.product.price * item.quantity;
-
-      return {
-        product: item.product._id,
+    // Check stock and prepare order items
+    for (const item of cart.items) {
+      const product = item.product;
+      
+      // Check if enough stock
+      if (product.stock < item.quantity) {
+        return res.status(400).json({ 
+          message: `Insufficient stock for ${product.title}. Available: ${product.stock}` 
+        });
+      }
+      
+      totalAmount += product.price * item.quantity;
+      
+      orderItems.push({
+        product: product._id,
         quantity: item.quantity,
-        price: item.product.price,
-      };
-    });
+        price: product.price,
+      });
+      
+      // Reduce stock
+      product.stock -= item.quantity;
+      await product.save();
+    }
 
+    // Create order
     const order = await Order.create({
       user: userId,
       items: orderItems,
       totalAmount,
+      shippingAddress: shippingAddress || {},
+      paymentMethod: paymentMethod || "cash",
+      status: "pending",
     });
 
-    // Clear cart after order placed
+    // Clear the cart after order is placed
     cart.items = [];
     await cart.save();
 
-    res.status(201).json(order);
+    res.status(201).json({
+      success: true,
+      message: "Order created successfully",
+      order: order,
+    });
   } catch (err) {
     console.error("CREATE ORDER ERROR:", err);
     res.status(500).json({
@@ -50,7 +74,8 @@ exports.getMyOrders = async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user.id })
       .populate("items.product", "title price image category")
-      .populate("user", "name email");
+      .populate("user", "name email")
+      .sort({ createdAt: -1 }); // Sort by newest first
 
     res.json(orders);
   } catch (err) {
@@ -62,7 +87,6 @@ exports.getMyOrders = async (req, res) => {
   }
 };
 
-
 // Admin - Get all orders
 exports.getAllOrders = async (req, res) => {
   try {
@@ -72,7 +96,8 @@ exports.getAllOrders = async (req, res) => {
         path: "items.product",
         select: "title price image category",
         populate: { path: "category", select: "name" },
-      });
+      })
+      .sort({ createdAt: -1 });
 
     res.json(orders);
   } catch (err) {

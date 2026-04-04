@@ -34,35 +34,30 @@ exports.createCategory = async (req, res) => {
 
 
 
-exports.getCategories = async (req,res)=>{
+// Get all categories (public)
+exports.getCategories = async (req, res) => {
+  try {
+    const categories = await Category.find().sort({ name: 1 });
+    res.json(categories);
+  } catch (err) {
+    console.error("GET CATEGORIES ERROR:", err);
+    res.status(500).json({ message: "Internal Server Error", error: err.message });
+  }
+};
 
-try{
-
-const categories = await Category.find();
-
-res.json(categories);
-
-}catch(err){
-
-res.status(500).json(err);
-
-}};
-
-
-
-exports.getSingleCategory = async (req,res)=>{
-
-try{
-
-const category = await Category.findById(req.params.id);
-
-res.json(category);
-
-}catch(err){
-
-res.status(500).json(err);
-
-}};
+// Get single category
+exports.getSingleCategory = async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id);
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    res.json(category);
+  } catch (err) {
+    console.error("GET SINGLE CATEGORY ERROR:", err);
+    res.status(500).json({ message: "Internal Server Error", error: err.message });
+  }
+};
 
 
 

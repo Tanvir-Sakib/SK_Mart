@@ -18,9 +18,9 @@ required: true
 },
 
 category: {
-type: mongoose.Schema.Types.ObjectId,
-ref: "category",
-required: true
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "category",  // Make sure this matches your Category model name
+  required: true,
 },
 
 image: {

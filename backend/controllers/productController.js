@@ -58,6 +58,65 @@ exports.createProduct = async (req, res) => {
   }
 };
 
+// Admin-only: update product
+exports.updateProduct = async (req, res) => {
+  try {
+    console.log("Update request body:", req.body);
+    console.log("Product ID:", req.params.id);
+    
+    // Optional: handle image update if file exists
+    if (req.file) {
+      req.body.image = `/uploads/${req.file.filename}`;
+    }
+
+    // Ensure price and stock are numbers
+    if (req.body.price) {
+      req.body.price = Number(req.body.price);
+    }
+    if (req.body.stock) {
+      req.body.stock = Number(req.body.stock);
+    }
+
+    // If category is being updated, check existence
+    if (req.body.category) {
+      const categoryExists = await Category.findById(req.body.category);
+      if (!categoryExists) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    ).populate("category", "name");
+
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    console.log("Product updated:", updatedProduct);
+    res.json(updatedProduct);
+  } catch (err) {
+    console.error("UPDATE PRODUCT ERROR:", err);
+    res.status(500).json({ message: "Internal Server Error", error: err.message });
+  }
+};
+
+// Admin-only: delete product
+exports.deleteProduct = async (req, res) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    res.json({ message: "Product deleted successfully" });
+  } catch (err) {
+    console.error("DELETE PRODUCT ERROR:", err);
+    res.status(500).json({ message: "Internal Server Error", error: err.message });
+  }
+};
+
 // Get all products with populated category name
 exports.getProducts = async (req, res) => {
   try {
@@ -82,53 +141,6 @@ exports.getSingleProduct = async (req, res) => {
     res.json(product);
   } catch (err) {
     console.error("GET SINGLE PRODUCT ERROR:", err);
-    res.status(500).json({ message: "Internal Server Error", error: err.message });
-  }
-};
-
-// Admin-only: update product
-exports.updateProduct = async (req, res) => {
-  try {
-    // Optional: handle image update if file exists
-    if (req.file) {
-      req.body.image = `/uploads/${req.file.filename}`;
-    }
-
-    // If category is being updated, check existence
-    if (req.body.category) {
-      const categoryExists = await Category.findById(req.body.category);
-      if (!categoryExists) {
-        return res.status(404).json({ message: "Category not found" });
-      }
-    }
-
-    const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    ).populate("category", "name");
-
-    if (!updatedProduct) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    res.json(updatedProduct);
-  } catch (err) {
-    console.error("UPDATE PRODUCT ERROR:", err);
-    res.status(500).json({ message: "Internal Server Error", error: err.message });
-  }
-};
-
-// Admin-only: delete product
-exports.deleteProduct = async (req, res) => {
-  try {
-    const product = await Product.findByIdAndDelete(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-    res.json({ message: "Product deleted successfully" });
-  } catch (err) {
-    console.error("DELETE PRODUCT ERROR:", err);
     res.status(500).json({ message: "Internal Server Error", error: err.message });
   }
 };
