@@ -86,4 +86,3 @@ A full-featured e-commerce platform built with the MERN stack (MongoDB, Express.
 | html2pdf.js | PDF generation |
 | CSS3 | Styling |
 
-## 📁 Project Structure
