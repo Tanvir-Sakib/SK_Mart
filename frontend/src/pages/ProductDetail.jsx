@@ -1,0 +1,126 @@
+// src/pages/ProductDetail.jsx
+import { useState, useEffect, useContext } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
+import { CartContext } from "../context/CartContext";
+import { formatPrice } from "../utils/currency";
+import axios from "axios";
+
+const ProductDetail = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { token } = useContext(AuthContext);
+  const { addToCart } = useContext(CartContext);
+  
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [quantity, setQuantity] = useState(1);
+  const [addedToCart, setAddedToCart] = useState(false);
+
+  useEffect(() => {
+    fetchProduct();
+  }, [id]);
+
+  const fetchProduct = async () => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/products/${id}`);
+      setProduct(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      setLoading(false);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!token) {
+      alert("Please login first");
+      navigate("/login");
+      return;
+    }
+
+    const success = await addToCart(product._id, quantity);
+    if (success) {
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 3000);
+    }
+  };
+
+  const updateQuantity = (change) => {
+    const newQuantity = quantity + change;
+    if (newQuantity >= 1 && newQuantity <= product.stock) {
+      setQuantity(newQuantity);
+    }
+  };
+
+  if (loading) return <div className="loading">Loading...</div>;
+  if (!product) return <div className="error">Product not found</div>;
+
+  return (
+    <div className="product-detail-container">
+      <button onClick={() => navigate(-1)} className="back-button">
+        ← Back to Products
+      </button>
+
+      <div className="product-detail">
+        <div className="product-image">
+          <img 
+            src={`http://localhost:5000${product.image}`} 
+            alt={product.title}
+            onError={(e) => {
+              e.target.src = "https://via.placeholder.com/500x500?text=No+Image";
+            }}
+          />
+        </div>
+
+        <div className="product-info">
+          <h1>{product.title}</h1>
+          <p className="category">
+            Category: {product.category?.name || "Uncategorized"}
+          </p>
+          <p className="price">{formatPrice(product.price)}</p>
+          <p className="description">{product.description}</p>
+          <p className={`stock ${product.stock === 0 ? "out-of-stock" : ""}`}>
+            {product.stock === 0 ? "Out of Stock" : `In Stock: ${product.stock} units`}
+          </p>
+
+          {product.stock > 0 && (
+            <>
+              <div className="quantity-selector">
+                <label>Quantity: </label>
+                <button 
+                  onClick={() => updateQuantity(-1)}
+                  disabled={quantity <= 1}
+                >
+                  -
+                </button>
+                <span>{quantity}</span>
+                <button 
+                  onClick={() => updateQuantity(1)}
+                  disabled={quantity >= product.stock}
+                >
+                  +
+                </button>
+              </div>
+
+              <button 
+                onClick={handleAddToCart} 
+                className="add-to-cart-btn"
+              >
+                Add to Cart
+              </button>
+            </>
+          )}
+
+          {addedToCart && (
+            <div className="success-message">
+              ✓ Product added to cart successfully!
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProductDetail;

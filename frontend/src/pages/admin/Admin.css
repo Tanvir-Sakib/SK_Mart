@@ -1,0 +1,307 @@
+.admin-container {
+  max-width: 1400px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--shadow-md);
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+}
+
+.stat-info h3 {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin-bottom: 0.5rem;
+}
+
+.stat-info p {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: var(--secondary-color);
+}
+
+.stat-card.warning .stat-info p {
+  color: var(--warning-color);
+}
+
+.admin-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.admin-btn {
+  background: var(--secondary-color);
+  color: white;
+  text-decoration: none;
+  padding: 1rem;
+  text-align: center;
+  border-radius: 8px;
+  transition: var(--transition);
+}
+
+.admin-btn:hover {
+  background: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.admin-table {
+  width: 100%;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-table th {
+  background: var(--secondary-color);
+  color: white;
+  font-weight: 600;
+}
+
+.admin-table tr:hover {
+  background: var(--light-bg);
+}
+
+.product-thumb {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.low-stock {
+  color: var(--danger-color);
+  font-weight: bold;
+}
+
+.edit-btn,
+.delete-btn,
+.add-btn {
+  padding: 0.5rem 1rem;
+  margin: 0 0.25rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.edit-btn {
+  background: var(--info-color);
+  color: white;
+}
+
+.delete-btn {
+  background: var(--danger-color);
+  color: white;
+}
+
+.add-btn {
+  background: var(--success-color);
+  color: white;
+  font-size: 1rem;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-content input,
+.modal-content textarea,
+.modal-content select {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.modal-content textarea {
+  min-height: 100px;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.modal-buttons button {
+  padding: 0.5rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.modal-buttons button[type="submit"] {
+  background: var(--success-color);
+  color: white;
+}
+
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+}
+
+.status-badge.pending { background: var(--warning-color); }
+.status-badge.processing { background: var(--info-color); color: white; }
+.status-badge.shipped { background: var(--primary-color); color: white; }
+.status-badge.delivered { background: var(--success-color); color: white; }
+
+@media (max-width: 768px) {
+  .admin-table {
+    font-size: 0.85rem;
+  }
+  
+  .admin-table th,
+  .admin-table td {
+    padding: 0.5rem;
+  }
+}
+/* Add these styles */
+.status-select, .role-select {
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+}
+
+.status-pending { background: #ffc107; color: #333; padding: 0.25rem 0.5rem; border-radius: 4px; }
+.status-processing { background: #17a2b8; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; }
+.status-shipped { background: #007bff; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; }
+.status-delivered { background: #28a745; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; }
+.status-cancelled { background: #dc3545; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; }
+
+.image-upload {
+  margin-bottom: 1rem;
+}
+
+.image-upload label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.file-input {
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  width: 100%;
+}
+
+.image-preview {
+  margin-top: 0.5rem;
+}
+
+.image-preview img {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.current-image {
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #f0f0f0;
+  border-radius: 8px;
+}
+
+.current-image p {
+  margin: 0 0 5px 0;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.current-image-preview {
+  max-width: 100px;
+  max-height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.image-upload label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 500;
+  color: var(--secondary-color);
+}
+
+.file-input {
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.image-preview {
+  margin-top: 10px;
+}
+
+.image-preview p {
+  margin: 0 0 5px 0;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.image-preview img {
+  max-width: 150px;
+  max-height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
