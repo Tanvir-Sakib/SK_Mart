@@ -83,9 +83,11 @@ const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterRes
               {category.name}
             </button>
           ))}
-          
+
         </div>
-                <div className="search-container">
+
+        
+        <div className="search-container">
           <input
             type="text"
             className="search-input-nav"
