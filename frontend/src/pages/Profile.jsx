@@ -1,10 +1,9 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import axios from "axios";
-import { apiClient, endpoints } from '../utils/api';
+import { apiClient, endpoints } from "../utils/api";
 
 const Profile = () => {
-  const { token, user, login } = useContext(AuthContext);
+  const { token, user, updateUser } = useContext(AuthContext); // Add updateUser
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -17,30 +16,12 @@ const Profile = () => {
   });
 
   useEffect(() => {
-    console.log("Profile - User data from context:", user);
-    
-    // Try to get user from localStorage if context is empty
-    if (!user) {
-      const savedUser = localStorage.getItem("user");
-      if (savedUser) {
-        try {
-          const parsedUser = JSON.parse(savedUser);
-          console.log("Profile - Found user in localStorage:", parsedUser);
-          setFormData(prev => ({
-            ...prev,
-            name: parsedUser.name || "",
-            email: parsedUser.email || ""
-          }));
-        } catch (e) {
-          console.error("Error parsing user from localStorage:", e);
-        }
-      }
-    } else {
-      setFormData(prev => ({
-        ...prev,
+    if (user) {
+      setFormData({
+        ...formData,
         name: user.name || "",
         email: user.email || ""
-      }));
+      });
     }
   }, [user]);
 
@@ -58,40 +39,28 @@ const Profile = () => {
     setMessage("");
 
     try {
-      console.log("Updating profile with:", { name: formData.name, email: formData.email });
-      
-      const response = await apiClient.put(endpoints.auth.updateProfile, {
-        name: formData.name,
-        email: formData.email
-      }, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
+      const response = await apiClient.put(
+        endpoints.auth.updateProfile,
+        {
+          name: formData.name,
+          email: formData.email
         }
-      });
+      );
 
       console.log("Profile update response:", response.data);
-
-      // Update user in context and localStorage
-      const currentUser = user || JSON.parse(localStorage.getItem("user") || "{}");
-      const updatedUser = { 
-        ...currentUser, 
-        name: formData.name, 
-        email: formData.email 
-      };
       
-      login(token, updatedUser);
+      // Update user in context using updateUser function
+      updateUser({ name: formData.name, email: formData.email });
       
       setMessage("Profile updated successfully!");
       
-      // Refresh page after 1 second to show updated data
+      // Refresh the page after 1 second to ensure all components get updated user
       setTimeout(() => {
         window.location.reload();
       }, 1000);
       
     } catch (err) {
       console.error("Profile update error:", err);
-      console.error("Error response:", err.response?.data);
       setError(err.response?.data?.message || "Error updating profile");
     } finally {
       setLoading(false);
@@ -100,17 +69,6 @@ const Profile = () => {
 
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
-    
-    // Validation
-    if (!formData.currentPassword) {
-      setError("Please enter your current password");
-      return;
-    }
-    
-    if (!formData.newPassword) {
-      setError("Please enter a new password");
-      return;
-    }
     
     if (formData.newPassword !== formData.confirmPassword) {
       setError("New passwords do not match");
@@ -127,65 +85,39 @@ const Profile = () => {
     setMessage("");
 
     try {
-      console.log("Changing password...");
-      
-      const response = await apiClient.put(endpoints.auth.changePassword, {
-        currentPassword: formData.currentPassword,
-        newPassword: formData.newPassword
-      }, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
+      const response = await apiClient.put(
+        endpoints.auth.changePassword,
+        {
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword
         }
-      });
+      );
 
-      console.log("Password change response:", response.data);
-      
       setMessage("Password changed successfully!");
-      
-      // Clear password fields
-      setFormData(prev => ({
-        ...prev,
+      setFormData({
+        ...formData,
         currentPassword: "",
         newPassword: "",
         confirmPassword: ""
-      }));
-      
-      // Optional: Logout user after password change to force re-login
-      // setTimeout(() => {
-      //   logout();
-      //   navigate("/login");
-      // }, 2000);
-      
+      });
     } catch (err) {
       console.error("Password change error:", err);
-      console.error("Error response:", err.response?.data);
       setError(err.response?.data?.message || "Error changing password");
     } finally {
       setLoading(false);
     }
   };
 
-  // Show loading state while checking user
-  if (!token) {
-    return <div className="loading">Please login to access profile...</div>;
+  if (!user) {
+    return <div className="loading">Loading profile...</div>;
   }
 
   return (
     <div className="profile-container">
       <h1>My Profile</h1>
       
-      {message && (
-        <div className="success-message">
-          ✓ {message}
-        </div>
-      )}
-      
-      {error && (
-        <div className="error-message">
-          ⚠️ {error}
-        </div>
-      )}
+      {message && <div className="success-message">{message}</div>}
+      {error && <div className="error-message">{error}</div>}
       
       <div className="profile-sections">
         {/* Profile Information Section */}
@@ -199,19 +131,17 @@ const Profile = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Enter your full name"
                 required
               />
             </div>
             
             <div className="form-group">
-              <label>Email Address</label>
+              <label>Email</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Enter your email"
                 required
               />
             </div>
@@ -233,7 +163,6 @@ const Profile = () => {
                 name="currentPassword"
                 value={formData.currentPassword}
                 onChange={handleChange}
-                placeholder="Enter current password"
                 required
               />
             </div>
@@ -245,7 +174,6 @@ const Profile = () => {
                 name="newPassword"
                 value={formData.newPassword}
                 onChange={handleChange}
-                placeholder="Enter new password (min 6 characters)"
                 required
               />
             </div>
@@ -257,7 +185,6 @@ const Profile = () => {
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Confirm new password"
                 required
               />
             </div>
