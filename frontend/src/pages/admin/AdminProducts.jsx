@@ -3,7 +3,7 @@ import { AuthContext } from "../../context/AuthContext";
 import axios from "axios";
 import { formatPrice } from "../../utils/currency";
 import "./Admin.css";
-import { apiClient, endpoints } from '../../utils/api';
+import { apiClient, endpoints, getImageUrl } from '../../utils/api';
 
 const AdminProducts = () => {
   const { token } = useContext(AuthContext);

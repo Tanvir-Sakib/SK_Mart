@@ -3,7 +3,7 @@ import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { formatPrice } from "../utils/currency";
-import { apiClient, endpoints } from '../utils/api';
+import { apiClient, endpoints, getImageUrl } from '../utils/api';
 
 const Cart = () => {
   const { 

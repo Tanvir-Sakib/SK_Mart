@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { apiClient, endpoints, getImageUrl } from "../utils/api";
 
 const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterReset }) => {
   const [categories, setCategories] = useState([]);
@@ -13,7 +14,7 @@ const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterRes
   const fetchCategories = async () => {
     try {
       console.log("Fetching categories...");
-      const response = await axios.get("http://localhost:5000/api/categories");
+      const response = await apiClient.get(endpoints.categories.getAll);
       console.log("Categories fetched:", response.data);
       setCategories(response.data);
     } catch (error) {

@@ -4,7 +4,7 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import "./Admin.css";
 import { formatPrice } from "../../utils/currency";
-import { apiClient, endpoints } from '../../utils/api';
+import { apiClient, endpoints, getImageUrl } from '../../utils/api';
 
 const AdminDashboard = () => {
   const { token } = useContext(AuthContext);

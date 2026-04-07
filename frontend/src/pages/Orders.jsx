@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { formatPrice } from "../utils/currency";
-import {apiClient, endpoints} from '../utils/api';
+import {apiClient, endpoints, getImageUrl} from '../utils/api';
 import axios from "axios";
 import Invoice from "../components/Invoice";
 
@@ -15,19 +15,31 @@ const Orders = () => {
     fetchOrders();
   }, []);
 
-  const fetchOrders = async () => {
-    try {
-      const response = await apiClient.get(endpoints.orders.myOrders, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      console.log("Orders:", response.data);
-      setOrders(response.data);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    } finally {
-      setLoading(false);
+// In the fetchOrders function, add safety checks
+const fetchOrders = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+    const response = await apiClient.get(endpoints.orders.admin.getAll);
+    console.log("Orders response:", response.data);
+    
+    // Ensure orders is an array
+    let ordersData = [];
+    if (Array.isArray(response.data)) {
+      ordersData = response.data;
+    } else if (response.data && Array.isArray(response.data.orders)) {
+      ordersData = response.data.orders;
     }
-  };
+    
+    setOrders(ordersData);
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    setError(error.response?.data?.message || "Failed to fetch orders");
+    setOrders([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const getStatusColor = (status) => {
     switch(status) {

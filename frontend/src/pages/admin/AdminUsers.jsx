@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import axios from "axios";
 import "./Admin.css";
-import { apiClient, endpoints } from '../../utils/api';
+import { apiClient, endpoints, getImageUrl } from '../../utils/api';
 
 const AdminUsers = () => {
   const { token } = useContext(AuthContext);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { apiClient, endpoints, getImageUrl } from "../utils/api";
 
 const ProductFilters = ({ onFilterChange, onSortChange, onSearchChange }) => {
   const [categories, setCategories] = useState([]);
