@@ -77,11 +77,11 @@ export const endpoints = {
 
 // Helper function to get full image URL
 export const getImageUrl = (imagePath) => {
-  if (!imagePath) return 'https://via.placeholder.com/300x300?text=No+Image';
+  if (!imagePath) return 'https://placehold.co/300x300?text=No+Image';
   if (imagePath.startsWith('http')) return imagePath;
-  return `${API_URL}${imagePath}`;
+  const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+  return `${API_URL}${cleanPath}`;
 };
-
 // Axios instance with default config (optional but recommended)
 import axios from 'axios';
 
