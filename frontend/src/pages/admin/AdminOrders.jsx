@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import axios from "axios";
 import "./Admin.css";
+import { apiClient, endpoints } from '../../utils/api';
 
 const AdminOrders = () => {
   const { token } = useContext(AuthContext);
@@ -18,7 +19,7 @@ const AdminOrders = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get("http://localhost:5000/api/admin/orders", {
+      const response = await apiClient.get(endpoints.admin.orders, {
         headers: { Authorization: `Bearer ${token}` }
       });
       console.log("Orders fetched:", response.data);
@@ -33,8 +34,8 @@ const AdminOrders = () => {
 
   const updateOrderStatus = async (orderId, status) => {
     try {
-      await axios.put(
-        `http://localhost:5000/api/admin/orders/${orderId}/status`,
+      await apiClient.put(
+        `${endpoints.admin.orders}/${orderId}/status`,
         { status },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -146,9 +147,8 @@ const AdminOrders = () => {
                         <div className="products-list">
                           {order.items?.map((item, index) => (
                             <div key={item.product?._id || index} className="order-product-item">
-                              <img 
-                                src={item.product?.image ? `http://localhost:5000${item.product.image}` : "https://via.placeholder.com/60x60?text=No+Image"} 
-                                alt={item.product?.title || "Product"}
+                              <img src={getImageUrl(item.product?.image)} 
+                              alt={item.product?.title || "Product"}
                                 onError={(e) => e.target.src = "https://via.placeholder.com/60x60?text=No+Image"}
                               />
                               <div className="product-info">

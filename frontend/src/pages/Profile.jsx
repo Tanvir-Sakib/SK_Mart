@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
+import { apiClient, endpoints } from '../utils/api';
 
 const Profile = () => {
   const { token, user, login } = useContext(AuthContext);
@@ -59,19 +60,15 @@ const Profile = () => {
     try {
       console.log("Updating profile with:", { name: formData.name, email: formData.email });
       
-      const response = await axios.put(
-        "http://localhost:5000/api/auth/update-profile",
-        {
-          name: formData.name,
-          email: formData.email
-        },
-        {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
+      const response = await apiClient.put(endpoints.auth.updateProfile, {
+        name: formData.name,
+        email: formData.email
+      }, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
         }
-      );
+      });
 
       console.log("Profile update response:", response.data);
 
@@ -132,19 +129,15 @@ const Profile = () => {
     try {
       console.log("Changing password...");
       
-      const response = await axios.put(
-        "http://localhost:5000/api/auth/change-password",
-        {
-          currentPassword: formData.currentPassword,
-          newPassword: formData.newPassword
-        },
-        {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
+      const response = await apiClient.put(endpoints.auth.changePassword, {
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword
+      }, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
         }
-      );
+      });
 
       console.log("Password change response:", response.data);
       

@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import axios from "axios";
 import "./Admin.css";
+import { apiClient, endpoints } from '../../utils/api';
 
 const AdminUsers = () => {
   const { token } = useContext(AuthContext);
@@ -14,7 +15,7 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/users", {
+      const response = await apiClient.get(endpoints.admin.users, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUsers(response.data);
@@ -27,8 +28,8 @@ const AdminUsers = () => {
 
   const updateUserRole = async (userId, role) => {
     try {
-      await axios.put(
-        `http://localhost:5000/api/admin/users/${userId}/role`,
+      await apiClient.put(
+        `${endpoints.admin.users}/${userId}/role`,
         { role },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -41,7 +42,7 @@ const AdminUsers = () => {
   const deleteUser = async (userId) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, {
+        await apiClient.delete(`${endpoints.admin.users}/${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         fetchUsers();

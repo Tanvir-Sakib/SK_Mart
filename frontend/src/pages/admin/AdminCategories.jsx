@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import axios from "axios";
+import { apiClient, endpoints } from '../../utils/api';
 import "./Admin.css";
 
 const AdminCategories = () => {
@@ -17,7 +18,7 @@ const AdminCategories = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/categories", {
+      const response = await apiClient.get(endpoints.admin.categories, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCategories(response.data);
@@ -32,14 +33,14 @@ const AdminCategories = () => {
     e.preventDefault();
     try {
       if (editingCategory) {
-        await axios.put(
-          `http://localhost:5000/api/admin/categories/${editingCategory._id}`,
+        await apiClient.put(
+          `${endpoints.admin.categories}/${editingCategory._id}`,
           { name: categoryName },
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
-        await axios.post(
-          "http://localhost:5000/api/admin/categories",
+        await apiClient.post(
+          endpoints.admin.categories,
           { name: categoryName },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -57,7 +58,7 @@ const AdminCategories = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this category?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/categories/${id}`, {
+        await apiClient.delete(`${endpoints.admin.categories}/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         fetchCategories();

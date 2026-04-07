@@ -1,6 +1,7 @@
 import { createContext, useState, useContext, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
 import axios from "axios";
+import { apiClient, endpoints } from '../utils/api';
 
 export const CartContext = createContext();
 
@@ -24,7 +25,7 @@ export const CartProvider = ({ children }) => {
     
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:5000/api/cart", {
+      const response = await apiClient.get(endpoints.cart, {
         headers: { Authorization: `Bearer ${token}` }
       });
       console.log("Cart fetched:", response.data);
@@ -46,11 +47,9 @@ export const CartProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      const response = await axios.post(
-        "http://localhost:5000/api/cart",
-        { productId, quantity },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await apiClient.post(endpoints.cart, { productId, quantity }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       console.log("Add to cart response:", response.data);
       await fetchCart();
       alert("Product added to cart successfully!");
@@ -69,7 +68,7 @@ export const CartProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      const response = await axios.delete(`http://localhost:5000/api/cart/remove/${productId}`, {
+      const response = await apiClient.delete(` ${endpoints.cart}/${productId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       console.log("Remove from cart response:", response.data);
@@ -88,11 +87,9 @@ export const CartProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      const response = await axios.put(
-        `http://localhost:5000/api/cart/update/${productId}`,
-        { quantity },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await apiClient.put(` ${endpoints.cart}/update/${productId}`, { quantity }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       console.log("Update quantity response:", response.data);
       await fetchCart();
       return true;
@@ -109,7 +106,7 @@ export const CartProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      await axios.delete("http://localhost:5000/api/cart/clear", {
+      await apiClient.delete(endpoints.cart.clear, {
         headers: { Authorization: `Bearer ${token}` }
       });
       await fetchCart();

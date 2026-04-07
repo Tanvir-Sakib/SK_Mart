@@ -3,6 +3,8 @@ import { AuthContext } from "../../context/AuthContext";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import "./Admin.css";
+import { formatPrice } from "../../utils/currency";
+import { apiClient, endpoints } from '../../utils/api';
 
 const AdminDashboard = () => {
   const { token } = useContext(AuthContext);
@@ -22,7 +24,7 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/stats", {
+      const response = await apiClient.get(endpoints.admin.stats, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStats(response.data);
@@ -105,7 +107,7 @@ const AdminDashboard = () => {
               <tr key={order._id}>
                 <td>#{order._id.slice(-8)}</td>
                 <td>{order.user?.name}</td>
-                <td>₱ {order.totalAmount}</td>
+                <td> {formatPrice(order.totalAmount)}</td>
                 <td><span className={`status-badge ${order.status}`}>{order.status}</span></td>
                 <td>{new Date(order.createdAt).toLocaleDateString()}</td>
               </tr>

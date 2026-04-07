@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getProducts } from "../api/productService";
 import { formatPrice } from "../utils/currency";
+import { apiClient, endpoints } from '../utils/api';
 
 
 function Home() {
@@ -31,9 +32,7 @@ function Home() {
             key={product._id}
             className="border p-4 rounded shadow"
           >
-          <img
-            src={`http://localhost:5000${product.image}`}
-            alt={product.title}
+         <img src={getImageUrl(product.image)} alt={product.title}
             className="h-40 w-full object-cover"
           />
 

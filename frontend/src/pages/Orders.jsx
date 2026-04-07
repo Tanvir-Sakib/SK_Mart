@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { formatPrice } from "../utils/currency";
+import {apiClient, endpoints} from '../utils/api';
 import axios from "axios";
 import Invoice from "../components/Invoice";
 
@@ -16,7 +17,7 @@ const Orders = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/orders/my-orders", {
+      const response = await apiClient.get(endpoints.orders.myOrders, {
         headers: { Authorization: `Bearer ${token}` }
       });
       console.log("Orders:", response.data);
@@ -103,9 +104,8 @@ const Orders = () => {
                 <h3>🛍️ Items</h3>
                 {order.items.map((item, index) => (
                   <div key={index} className="order-item">
-                    <img 
-                      src={`http://localhost:5000${item.product?.image}`} 
-                      alt={item.product?.title}
+                    <img src={getImageUrl(item.product?.image)} 
+                    alt={item.product?.title}
                       onError={(e) => e.target.src = "https://via.placeholder.com/60x60?text=No+Image"}
                     />
                     <div className="order-item-details">

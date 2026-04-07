@@ -3,6 +3,7 @@ import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { formatPrice } from "../utils/currency";
+import { apiClient, endpoints } from '../utils/api';
 
 const Cart = () => {
   const { 
@@ -60,7 +61,7 @@ const Cart = () => {
           <div key={item.product?._id} className="cart-item">
             <div className="cart-item-product">
               <img 
-                src={`http://localhost:5000${item.product?.image}`} 
+                src={getImageUrl(item.product?.image)} 
                 alt={item.product?.title}
                 onError={(e) => e.target.src = "https://via.placeholder.com/80x80?text=No+Image"}
               />

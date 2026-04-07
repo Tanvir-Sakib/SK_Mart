@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import ProductCard from "../components/ProductCard";
 import CategoryNav from "../components/CategoryNav";
+import { apiClient, endpoints, getImageUrl } from '../utils/api';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -24,8 +25,9 @@ const Products = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get("http://localhost:5000/api/products");
+      const response = await apiClient.get(endpoints.products.getAll);
       console.log("Products fetched:", response.data);
+      setProducts(response.data.products || response.data);
       
       // Handle both response formats: array or object with products property
       let productsArray = [];

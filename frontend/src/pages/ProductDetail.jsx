@@ -5,6 +5,7 @@ import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { formatPrice } from "../utils/currency";
 import axios from "axios";
+import { apiClient, endpoints } from '../utils/api';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -23,7 +24,7 @@ const ProductDetail = () => {
 
   const fetchProduct = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/products/${id}`);
+      const response = await apiClient.get(`${endpoints.products.getOne}/${id}`);
       setProduct(response.data);
       setLoading(false);
     } catch (error) {
@@ -64,8 +65,7 @@ const ProductDetail = () => {
 
       <div className="product-detail">
         <div className="product-image">
-          <img 
-            src={`http://localhost:5000${product.image}`} 
+          <img src={getImageUrl(product.image)}
             alt={product.title}
             onError={(e) => {
               e.target.src = "https://via.placeholder.com/500x500?text=No+Image";

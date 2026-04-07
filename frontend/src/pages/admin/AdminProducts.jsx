@@ -3,6 +3,7 @@ import { AuthContext } from "../../context/AuthContext";
 import axios from "axios";
 import { formatPrice } from "../../utils/currency";
 import "./Admin.css";
+import { apiClient, endpoints } from '../../utils/api';
 
 const AdminProducts = () => {
   const { token } = useContext(AuthContext);
@@ -28,7 +29,7 @@ const AdminProducts = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/products", {
+      const response = await apiClient.get(endpoints.admin.products, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProducts(response.data);
@@ -41,7 +42,7 @@ const AdminProducts = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/categories", {
+      const response = await apiClient.get(endpoints.admin.categories, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCategories(response.data);
@@ -95,12 +96,9 @@ const AdminProducts = () => {
         const uploadData = new FormData();
         uploadData.append("image", imageFile);
         
-        const uploadResponse = await axios.post(
-          "http://localhost:5000/api/upload",
-          uploadData,
-          {
-            headers: { 
-              Authorization: `Bearer ${token}`,
+        const uploadResponse = await apiClient.post(endpoints.upload, uploadData, {
+          headers: { 
+            Authorization: `Bearer ${token}`,
               "Content-Type": "multipart/form-data"
             }
           }
@@ -108,8 +106,8 @@ const AdminProducts = () => {
         productData.image = uploadResponse.data.imageUrl;
       }
       
-      const response = await axios.put(
-        `http://localhost:5000/api/admin/products/${editingProduct._id}`,
+      const response = await apiClient.put(
+        `${endpoints.admin.products}/${editingProduct._id}`,
         productData,
         { 
           headers: { 
@@ -147,10 +145,8 @@ const AdminProducts = () => {
       
       console.log("Creating new product");
       
-      const response = await axios.post(
-        "http://localhost:5000/api/admin/products",
-        formDataToSend,
-        { 
+      
+      const response = await apiClient.post(endpoints.admin.products, formDataToSend, {
           headers: { 
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data"
@@ -179,7 +175,7 @@ const AdminProducts = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/products/${id}`, {
+        await apiClient.delete(`${endpoints.admin.products}/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         alert("Product deleted successfully!");
@@ -200,7 +196,7 @@ const AdminProducts = () => {
       category: product.category?._id || product.category,
       stock: product.stock,
     });
-    setImagePreview(`http://localhost:5000${product.image}`);
+    setImagePreview(getImageUrl(product.image));
     setImageFile(null); // Reset file input
     setShowModal(true);
   };
@@ -230,7 +226,7 @@ const AdminProducts = () => {
             <tr key={product._id}>
               <td>
                 <img 
-                  src={`http://localhost:5000${product.image}`} 
+                  src={getImageUrl(product.image)} 
                   alt={product.title} 
                   className="product-thumb" 
                   onError={(e) => {

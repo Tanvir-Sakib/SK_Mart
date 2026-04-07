@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import { formatPrice } from "../utils/currency";
+import { apiClient, endpoints } from '../utils/api';
 import axios from "axios";
 
 const Checkout = () => {
@@ -61,12 +62,9 @@ const handlePlaceOrder = async (e) => {
       totalAmount: calculateTotal()
     };
 
-    const response = await axios.post(
-      "http://localhost:5000/api/orders",
-      orderData,
-      {
-        headers: { 
-          Authorization: `Bearer ${token}`,
+    const response = await apiClient.post(endpoints.orders.create, orderData, {
+      headers: { 
+        Authorization: `Bearer ${token}`,
           "Content-Type": "application/json"
         }
       }
@@ -197,9 +195,8 @@ const handlePlaceOrder = async (e) => {
             <div className="summary-items">
               {cart.items.map((item) => (
                 <div key={item.product?._id} className="summary-item">
-                  <img 
-                    src={`http://localhost:5000${item.product?.image}`} 
-                    alt={item.product?.title}
+                  <img src={getImageUrl(item.product?.image)} 
+                  alt={item.product?.title}
                   />
                   <div className="summary-item-details">
                     <h4>{item.product?.title}</h4>
