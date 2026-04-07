@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import { apiClient, endpoints, getImageUrl } from "../../utils/api";
+import { apiClient, endpoints, getImageUrl, API_URL } from "../../utils/api";
+import axios from "axios";
 import "./Admin.css";
 
 const AdminProducts = () => {
@@ -30,27 +31,20 @@ const AdminProducts = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log("Fetching products from admin endpoint...");
       const response = await apiClient.get(endpoints.products.admin.getAll);
       console.log("Products response:", response.data);
       
-      // Handle different response formats
       let productsData = [];
       if (Array.isArray(response.data)) {
         productsData = response.data;
       } else if (response.data && Array.isArray(response.data.products)) {
         productsData = response.data.products;
-      } else if (response.data && typeof response.data === 'object') {
-        // Try to extract any array property
-        productsData = Object.values(response.data).find(val => Array.isArray(val)) || [];
       }
       
-      console.log("Processed products:", productsData.length);
       setProducts(productsData);
     } catch (error) {
       console.error("Error fetching products:", error);
       setError(error.response?.data?.message || "Failed to fetch products");
-      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -59,19 +53,15 @@ const AdminProducts = () => {
   const fetchCategories = async () => {
     try {
       const response = await apiClient.get(endpoints.categories.admin.getAll);
-      console.log("Categories response:", response.data);
-      
       let categoriesData = [];
       if (Array.isArray(response.data)) {
         categoriesData = response.data;
       } else if (response.data && Array.isArray(response.data.categories)) {
         categoriesData = response.data.categories;
       }
-      
       setCategories(categoriesData);
     } catch (error) {
       console.error("Error fetching categories:", error);
-      setCategories([]);
     }
   };
 
@@ -94,7 +84,7 @@ const AdminProducts = () => {
 
     try {
       if (editingProduct) {
-        // UPDATE PRODUCT
+        // UPDATE PRODUCT - Send as JSON
         const productData = {
           title: formData.title,
           description: formData.description,
@@ -103,13 +93,16 @@ const AdminProducts = () => {
           stock: Number(formData.stock),
         };
         
+        // Only upload image if a new one is selected
         if (imageFile) {
-          // Upload image first
           const uploadData = new FormData();
           uploadData.append("image", imageFile);
           
-          const uploadResponse = await apiClient.post(endpoints.upload, uploadData, {
-            headers: { "Content-Type": "multipart/form-data" }
+          const uploadResponse = await axios.post(`${API_URL}/api/upload`, uploadData, {
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data"
+            }
           });
           productData.image = uploadResponse.data.imageUrl;
         }
@@ -117,7 +110,7 @@ const AdminProducts = () => {
         await apiClient.put(endpoints.products.admin.update(editingProduct._id), productData);
         alert("Product updated successfully!");
       } else {
-        // CREATE PRODUCT
+        // CREATE NEW PRODUCT - Must use FormData for image
         if (!imageFile) {
           alert("Please select an image for the product");
           setLoading(false);
@@ -132,9 +125,15 @@ const AdminProducts = () => {
         formDataToSend.append("stock", formData.stock);
         formDataToSend.append("image", imageFile);
         
-        await apiClient.post(endpoints.products.admin.create, formDataToSend, {
-          headers: { "Content-Type": "multipart/form-data" }
+        // Use axios directly with FormData (not apiClient because of multipart)
+        const response = await axios.post(`${API_URL}/api/admin/products`, formDataToSend, {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data"
+          }
         });
+        
+        console.log("Create product response:", response.data);
         alert("Product created successfully!");
       }
       
@@ -147,6 +146,7 @@ const AdminProducts = () => {
       
     } catch (error) {
       console.error("Error saving product:", error);
+      console.error("Error response:", error.response?.data);
       setError(error.response?.data?.message || "Error saving product");
       alert(error.response?.data?.message || "Error saving product");
     } finally {
@@ -307,6 +307,7 @@ const AdminProducts = () => {
                   accept="image/*"
                   onChange={handleImageChange}
                   className="file-input"
+                  required={!editingProduct}
                 />
                 {imageFile && imagePreview && (
                   <div className="image-preview">
