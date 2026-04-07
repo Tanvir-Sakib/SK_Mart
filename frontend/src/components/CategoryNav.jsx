@@ -3,17 +3,17 @@ import { apiClient, endpoints } from "../utils/api";
 
 const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterReset, searchTerm: externalSearchTerm }) => {
   const [categories, setCategories] = useState([]);
-  const [searchTerm, setSearchTerm] = useState(externalSearchTerm || "");
+  const [localSearchTerm, setLocalSearchTerm] = useState(externalSearchTerm || "");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchCategories();
   }, []);
 
-  // Sync with external search term
+  // Update local search term when external changes
   useEffect(() => {
-    if (externalSearchTerm !== undefined) {
-      setSearchTerm(externalSearchTerm);
+    if (externalSearchTerm !== undefined && externalSearchTerm !== localSearchTerm) {
+      setLocalSearchTerm(externalSearchTerm);
     }
   }, [externalSearchTerm]);
 
@@ -44,12 +44,12 @@ const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterRes
 
   const handleHomeClick = () => {
     onFilterReset();
-    setSearchTerm("");
+    setLocalSearchTerm("");
   };
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
-    setSearchTerm(value);
+    setLocalSearchTerm(value);
     onSearch(value);
   };
 
@@ -78,7 +78,7 @@ const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterRes
             type="text"
             className="search-input-nav"
             placeholder="🔍 Search products..."
-            value={searchTerm}
+            value={localSearchTerm}
             onChange={handleSearchChange}
             autoComplete="off"
           />

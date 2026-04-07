@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import ProductCard from "../components/ProductCard";
 import CategoryNav from "../components/CategoryNav";
 import { apiClient, endpoints } from "../utils/api";
@@ -7,35 +7,21 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef(null);
 
-  // Debounce search term
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  // Fetch products when debounced search or category changes
-  useEffect(() => {
-    if (!loading) {
-      fetchProducts();
-    }
-  }, [debouncedSearch, selectedCategory]);
-
-  const fetchProducts = async () => {
+  // Fetch products based on search and category
+  const fetchProducts = useCallback(async () => {
     try {
-      setSearchLoading(true);
+      setIsSearching(true);
       setError(null);
       
       // Build query params
       const params = new URLSearchParams();
-      if (debouncedSearch) params.append("search", debouncedSearch);
+      if (searchTerm.trim()) params.append("search", searchTerm.trim());
       if (selectedCategory) params.append("category", selectedCategory);
       
       const url = params.toString() 
@@ -59,10 +45,34 @@ const Products = () => {
       console.error("Error fetching products:", error);
       setError(error.response?.data?.message || "Failed to fetch products");
     } finally {
+      setIsSearching(false);
       setLoading(false);
-      setSearchLoading(false);
     }
-  };
+  }, [searchTerm, selectedCategory]);
+
+  // Debounced search
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      if (searchTerm !== undefined) {
+        fetchProducts();
+      }
+    }, 300);
+    
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm, fetchProducts]);
+
+  // Initial load
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
@@ -71,20 +81,13 @@ const Products = () => {
 
   const handleSearch = (term) => {
     setSearchTerm(term);
-    setSearchLoading(true);
   };
 
   const handleFilterReset = () => {
     setSelectedCategory("");
     setSearchTerm("");
-    setDebouncedSearch("");
     setLoading(true);
   };
-
-  // Initial load
-  useEffect(() => {
-    fetchProducts();
-  }, []);
 
   if (loading && products.length === 0) {
     return <div className="loading">Loading products...</div>;
@@ -112,13 +115,13 @@ const Products = () => {
 
       <div className="results-info">
         <p>
-          {searchLoading ? "Searching..." : `${filteredProducts.length} product${filteredProducts.length !== 1 ? "s" : ""} found`}
+          {isSearching ? "Searching..." : `${filteredProducts.length} product${filteredProducts.length !== 1 ? "s" : ""} found`}
           {selectedCategory && " in selected category"}
-          {debouncedSearch && ` for "${debouncedSearch}"`}
+          {searchTerm && ` for "${searchTerm}"`}
         </p>
       </div>
 
-      {filteredProducts.length === 0 ? (
+      {filteredProducts.length === 0 && !isSearching ? (
         <div className="no-products">
           <p>No products found matching your criteria.</p>
           <button onClick={handleFilterReset} className="reset-btn">
