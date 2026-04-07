@@ -6,6 +6,22 @@ const User = require("../models/user");
 const Order = require("../models/order");
 const Product = require("../models/product");
 const Category = require("../models/category");
+const multer = require("multer");
+const path = require("path");
+
+
+// Configure multer for image upload
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage: storage });
 
 // Apply both middlewares - order matters! First auth, then admin
 router.use(authMiddleware);
