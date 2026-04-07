@@ -30,11 +30,16 @@ const ProductDetail = () => {
   const fetchProduct = async () => {
     try {
       setLoading(true);
-      setError(null);
-      console.log("Fetching product with ID:", id);
       const response = await apiClient.get(endpoints.products.getSingle(id));
       console.log("Product fetched:", response.data);
-      setProduct(response.data);
+      
+      // Handle response format - if it's wrapped in a products property
+      let productData = response.data;
+      if (response.data && response.data.product) {
+        productData = response.data.product;
+      }
+      
+      setProduct(productData);
     } catch (error) {
       console.error("Error fetching product:", error);
       setError(error.response?.data?.message || "Failed to fetch product");

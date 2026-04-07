@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import ProductCard from "../components/ProductCard";
 import CategoryNav from "../components/CategoryNav";
-import { apiClient, endpoints, getImageUrl } from '../utils/api';
+import { apiClient, endpoints } from "../utils/api";
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -26,22 +25,27 @@ const Products = () => {
       setLoading(true);
       setError(null);
       const response = await apiClient.get(endpoints.products.getAll);
-      console.log("Products fetched:", response.data);
-      setProducts(response.data.products || response.data);
+      console.log("Products API response:", response.data);
       
-      // Handle both response formats: array or object with products property
+      // IMPORTANT FIX: Extract products array from response
       let productsArray = [];
-      if (Array.isArray(response.data)) {
-        productsArray = response.data;
-      } else if (response.data.products && Array.isArray(response.data.products)) {
+      if (response.data && Array.isArray(response.data.products)) {
+        // This is your case - response has { products: [...] }
         productsArray = response.data.products;
+      } else if (Array.isArray(response.data)) {
+        // Direct array response
+        productsArray = response.data;
+      } else {
+        console.error("Unexpected response format:", response.data);
+        productsArray = [];
       }
       
+      console.log("Products extracted:", productsArray.length);
       setProducts(productsArray);
       setFilteredProducts(productsArray);
     } catch (error) {
       console.error("Error fetching products:", error);
-      setError(error.message || "Failed to fetch products");
+      setError(error.response?.data?.message || "Failed to fetch products");
     } finally {
       setLoading(false);
     }
@@ -52,7 +56,7 @@ const Products = () => {
     
     let filtered = [...products];
 
-    // Filter by category - check if product.category matches selected category
+    // Filter by category
     if (selectedCategory) {
       filtered = filtered.filter((product) => {
         const productCategoryId = product.category?._id || product.category;
@@ -75,7 +79,6 @@ const Products = () => {
   };
 
   const handleCategorySelect = (categoryId) => {
-    console.log("Selected category:", categoryId);
     setSelectedCategory(categoryId);
   };
 
@@ -95,19 +98,15 @@ const Products = () => {
   if (error) {
     return (
       <div className="error-container">
-        <h2>Error loading products</h2>
+        <h2>Error Loading Products</h2>
         <p>{error}</p>
         <button onClick={fetchProducts}>Try Again</button>
       </div>
     );
   }
 
-  // Make sure filteredProducts is always an array
-  const productsToShow = Array.isArray(filteredProducts) ? filteredProducts : [];
-
   return (
     <div className="products-page">
-      {/* Category Navigation Bar */}
       <CategoryNav
         onCategorySelect={handleCategorySelect}
         selectedCategory={selectedCategory}
@@ -115,17 +114,15 @@ const Products = () => {
         onFilterReset={handleFilterReset}
       />
 
-      {/* Results Info */}
       <div className="results-info">
         <p>
-          {productsToShow.length} product{productsToShow.length !== 1 ? "s" : ""} found
+          {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""} found
           {selectedCategory && " in selected category"}
           {searchTerm && ` for "${searchTerm}"`}
         </p>
       </div>
 
-      {/* Products Grid */}
-      {productsToShow.length === 0 ? (
+      {filteredProducts.length === 0 ? (
         <div className="no-products">
           <p>No products found matching your criteria.</p>
           <button onClick={handleFilterReset} className="reset-btn">
@@ -134,7 +131,7 @@ const Products = () => {
         </div>
       ) : (
         <div className="products-grid">
-          {productsToShow.map((product) => (
+          {filteredProducts.map((product) => (
             <ProductCard key={product._id} product={product} />
           ))}
         </div>
