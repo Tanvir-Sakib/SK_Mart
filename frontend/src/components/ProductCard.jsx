@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { formatPrice } from "../utils/currency";
+import { apiClient, endpoints } from '../utils/api';
 
 
 function ProductCard({ product }) {
@@ -31,7 +32,7 @@ function ProductCard({ product }) {
   };
 
   const imageUrl = product.image
-    ? `http://localhost:5000${product.image}`
+    ? `https://skmart-y04r.onrender.com${product.image}`
     : "https://via.placeholder.com/300x300?text=No+Image";
 
   return (

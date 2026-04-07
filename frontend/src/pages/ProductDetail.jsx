@@ -1,34 +1,44 @@
-// src/pages/ProductDetail.jsx
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
-import { formatPrice } from "../utils/currency";
-import axios from "axios";
-import { apiClient, endpoints } from '../utils/api';
+import { apiClient, endpoints, getImageUrl } from "../utils/api";
 
 const ProductDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams(); // Make sure this matches the route parameter name
   const navigate = useNavigate();
   const { token } = useContext(AuthContext);
   const { addToCart } = useContext(CartContext);
   
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [adding, setAdding] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
 
   useEffect(() => {
-    fetchProduct();
+    console.log("Product ID from URL:", id); // Debug log
+    if (id) {
+      fetchProduct();
+    } else {
+      setError("No product ID provided");
+      setLoading(false);
+    }
   }, [id]);
 
   const fetchProduct = async () => {
     try {
-      const response = await apiClient.get(`${endpoints.products.getOne}/${id}`);
+      setLoading(true);
+      setError(null);
+      console.log("Fetching product with ID:", id);
+      const response = await apiClient.get(endpoints.products.getSingle(id));
+      console.log("Product fetched:", response.data);
       setProduct(response.data);
-      setLoading(false);
     } catch (error) {
       console.error("Error fetching product:", error);
+      setError(error.response?.data?.message || "Failed to fetch product");
+    } finally {
       setLoading(false);
     }
   };
@@ -40,7 +50,10 @@ const ProductDetail = () => {
       return;
     }
 
+    setAdding(true);
     const success = await addToCart(product._id, quantity);
+    setAdding(false);
+    
     if (success) {
       setAddedToCart(true);
       setTimeout(() => setAddedToCart(false), 3000);
@@ -54,7 +67,19 @@ const ProductDetail = () => {
     }
   };
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <div className="loading">Loading product...</div>;
+  
+  if (error) {
+    return (
+      <div className="error-container">
+        <h2>Error Loading Product</h2>
+        <p>{error}</p>
+        <button onClick={() => navigate(-1)}>Go Back</button>
+        <button onClick={fetchProduct}>Try Again</button>
+      </div>
+    );
+  }
+  
   if (!product) return <div className="error">Product not found</div>;
 
   return (
@@ -65,7 +90,8 @@ const ProductDetail = () => {
 
       <div className="product-detail">
         <div className="product-image">
-          <img src={getImageUrl(product.image)}
+          <img 
+            src={getImageUrl(product.image)} 
             alt={product.title}
             onError={(e) => {
               e.target.src = "https://via.placeholder.com/500x500?text=No+Image";
@@ -78,7 +104,7 @@ const ProductDetail = () => {
           <p className="category">
             Category: {product.category?.name || "Uncategorized"}
           </p>
-          <p className="price">{formatPrice(product.price)}</p>
+          <p className="price">৳ {product.price}</p>
           <p className="description">{product.description}</p>
           <p className={`stock ${product.stock === 0 ? "out-of-stock" : ""}`}>
             {product.stock === 0 ? "Out of Stock" : `In Stock: ${product.stock} units`}
@@ -106,8 +132,9 @@ const ProductDetail = () => {
               <button 
                 onClick={handleAddToCart} 
                 className="add-to-cart-btn"
+                disabled={adding}
               >
-                Add to Cart
+                {adding ? "Adding to Cart..." : "Add to Cart"}
               </button>
             </>
           )}
