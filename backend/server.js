@@ -9,7 +9,7 @@ require("dotenv").config(); // Only need this once
 const app = express();
 
 app.use(cors({
-  origin: "https://skmart-y04r.onrender.com",
+  origin: "https://skmart-five.vercel.app",
   credentials: true
 }));
 app.use(express.json());
