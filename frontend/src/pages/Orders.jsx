@@ -1,45 +1,43 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { formatPrice } from "../utils/currency";
-import {apiClient, endpoints, getImageUrl} from '../utils/api';
-import axios from "axios";
+import { apiClient, endpoints, getImageUrl } from "../utils/api";
 import Invoice from "../components/Invoice";
 
 const Orders = () => {
   const { token } = useContext(AuthContext);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null); // Add this line - the missing state
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   useEffect(() => {
     fetchOrders();
   }, []);
 
-// In the fetchOrders function, add safety checks
-const fetchOrders = async () => {
-  try {
-    setLoading(true);
-    setError(null);
-    const response = await apiClient.get(endpoints.orders.admin.getAll);
-    console.log("Orders response:", response.data);
-    
-    // Ensure orders is an array
-    let ordersData = [];
-    if (Array.isArray(response.data)) {
-      ordersData = response.data;
-    } else if (response.data && Array.isArray(response.data.orders)) {
-      ordersData = response.data.orders;
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError(null); // Now this works
+      const response = await apiClient.get(endpoints.orders.myOrders);
+      console.log("Orders response:", response.data);
+      
+      // Ensure orders is an array
+      let ordersData = [];
+      if (Array.isArray(response.data)) {
+        ordersData = response.data;
+      } else if (response.data && Array.isArray(response.data.orders)) {
+        ordersData = response.data.orders;
+      }
+      
+      setOrders(ordersData);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setError(error.response?.data?.message || "Failed to fetch orders"); // Now this works
+      setOrders([]);
+    } finally {
+      setLoading(false);
     }
-    
-    setOrders(ordersData);
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    setError(error.response?.data?.message || "Failed to fetch orders");
-    setOrders([]);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -67,13 +65,25 @@ const fetchOrders = async () => {
     setSelectedOrder(order);
   };
 
-  if (loading) return <div className="loading">Loading orders...</div>;
+  if (loading) {
+    return <div className="loading">Loading orders...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="error-container">
+        <h2>Error Loading Orders</h2>
+        <p>{error}</p>
+        <button onClick={fetchOrders}>Try Again</button>
+      </div>
+    );
+  }
 
   return (
     <div className="orders-container">
       <h1>My Orders</h1>
       
-      {orders.length === 0 ? (
+      {!orders || orders.length === 0 ? (
         <div className="no-orders">
           <div className="no-orders-icon">📦</div>
           <h2>No Orders Yet</h2>
@@ -88,13 +98,13 @@ const fetchOrders = async () => {
             <div key={order._id} className="order-card">
               <div className="order-header">
                 <div className="order-info">
-                  <span className="order-id">Order #{order._id.slice(-8)}</span>
+                  <span className="order-id">Order #{order._id?.slice(-8) || "N/A"}</span>
                   <span className={`order-status ${getStatusColor(order.status)}`}>
-                    {getStatusIcon(order.status)} {order.status.toUpperCase()}
+                    {getStatusIcon(order.status)} {order.status?.toUpperCase() || "PENDING"}
                   </span>
                 </div>
                 <div className="order-date">
-                  📅 {new Date(order.createdAt).toLocaleDateString()}
+                  📅 {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "N/A"}
                 </div>
               </div>
               
@@ -103,33 +113,38 @@ const fetchOrders = async () => {
                 <div className="order-shipping-address">
                   <h3>📮 Shipping Address</h3>
                   <div className="address-details">
-                    <p><strong>{order.shippingAddress.fullName}</strong></p>
-                    <p>{order.shippingAddress.address}</p>
-                    <p>{order.shippingAddress.city}, {order.shippingAddress.postalCode}</p>
-                    <p>📞 {order.shippingAddress.phone}</p>
-                    <p>📧 {order.shippingAddress.email}</p>
+                    <p><strong>{order.shippingAddress.fullName || "N/A"}</strong></p>
+                    <p>{order.shippingAddress.address || "N/A"}</p>
+                    <p>{order.shippingAddress.city || "N/A"}, {order.shippingAddress.postalCode || ""}</p>
+                    <p>📞 {order.shippingAddress.phone || "N/A"}</p>
+                    <p>📧 {order.shippingAddress.email || "N/A"}</p>
                   </div>
                 </div>
               )}
               
               <div className="order-items">
                 <h3>🛍️ Items</h3>
-                {order.items.map((item, index) => (
-                  <div key={index} className="order-item">
-                    <img src={getImageUrl(item.product?.image)} 
-                    alt={item.product?.title}
-                      onError={(e) => e.target.src = "https://via.placeholder.com/60x60?text=No+Image"}
-                    />
-                    <div className="order-item-details">
-                      <h4>{item.product?.title}</h4>
-                      <p>Quantity: {item.quantity}</p>
-                      <p className="price">{formatPrice(item.price)}</p>
+                {order.items && order.items.length > 0 ? (
+                  order.items.map((item, index) => (
+                    <div key={item.product?._id || index} className="order-item">
+                      <img 
+                        src={getImageUrl(item.product?.image)} 
+                        alt={item.product?.title || "Product"}
+                        onError={(e) => e.target.src = "https://placehold.co/60x60?text=No+Image"}
+                      />
+                      <div className="order-item-details">
+                        <h4>{item.product?.title || "Unknown Product"}</h4>
+                        <p>Quantity: {item.quantity || 0}</p>
+                        <p>Price: ৳ {item.price || 0}</p>
+                      </div>
+                      <div className="order-item-total">
+                        ৳ {(item.price || 0) * (item.quantity || 0)}
+                      </div>
                     </div>
-                    <div className="order-item-total">
-                      {formatPrice(item.price * item.quantity)}
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="no-items">No items found for this order</p>
+                )}
               </div>
               
               <div className="order-footer">
@@ -137,8 +152,7 @@ const fetchOrders = async () => {
                   <strong>Payment Method:</strong> {order.paymentMethod || "Cash on Delivery"}
                 </div>
                 <div className="order-total">
-                  <strong>Total Amount:</strong> {formatPrice(order.totalAmount || order.total)}
-                  
+                  <strong>Total Amount:</strong> ৳ {order.totalAmount || order.total || 0}
                 </div>
                 <button 
                   className="invoice-btn"
