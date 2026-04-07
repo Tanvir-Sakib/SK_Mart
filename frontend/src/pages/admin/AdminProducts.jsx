@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import { apiClient, endpoints, getImageUrl, API_URL } from "../../utils/api";
+import { API_URL } from "../../utils/api";
 import axios from "axios";
 import "./Admin.css";
 
@@ -9,7 +9,6 @@ const AdminProducts = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [imageFile, setImageFile] = useState(null);
@@ -30,21 +29,24 @@ const AdminProducts = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      setError(null);
-      const response = await apiClient.get(endpoints.products.admin.getAll);
+      console.log("Fetching products...");
+      const response = await axios.get(`${API_URL}/api/admin/products`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       console.log("Products response:", response.data);
       
+      // Handle different response formats
       let productsData = [];
-      if (Array.isArray(response.data)) {
-        productsData = response.data;
-      } else if (response.data && Array.isArray(response.data.products)) {
+      if (response.data && Array.isArray(response.data.products)) {
         productsData = response.data.products;
+      } else if (Array.isArray(response.data)) {
+        productsData = response.data;
       }
       
+      console.log("Products extracted:", productsData.length);
       setProducts(productsData);
     } catch (error) {
       console.error("Error fetching products:", error);
-      setError(error.response?.data?.message || "Failed to fetch products");
     } finally {
       setLoading(false);
     }
@@ -52,14 +54,12 @@ const AdminProducts = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await apiClient.get(endpoints.categories.admin.getAll);
-      let categoriesData = [];
-      if (Array.isArray(response.data)) {
-        categoriesData = response.data;
-      } else if (response.data && Array.isArray(response.data.categories)) {
-        categoriesData = response.data.categories;
-      }
-      setCategories(categoriesData);
+      const response = await axios.get(`${API_URL}/api/admin/categories`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log("Categories response:", response.data);
+      const categoriesData = response.data.categories || response.data;
+      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
@@ -79,17 +79,19 @@ const AdminProducts = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-
+    
+    // Validate
+    if (!formData.title || !formData.description || !formData.price || !formData.category || !formData.stock) {
+      alert("Please fill in all fields");
+      return;
+    }
+    
+    if (!editingProduct && !imageFile) {
+      alert("Please select an image for the product");
+      return;
+    }
+    
     try {
-      // Validate form data
-      if (!formData.title || !formData.description || !formData.price || !formData.category || !formData.stock) {
-        alert("Please fill in all fields");
-        setLoading(false);
-        return;
-      }
-
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
       formDataToSend.append("description", formData.description);
@@ -99,15 +101,6 @@ const AdminProducts = () => {
       
       if (imageFile) {
         formDataToSend.append("image", imageFile);
-      } else if (!editingProduct) {
-        alert("Please select an image for the product");
-        setLoading(false);
-        return;
-      }
-      
-      console.log("Sending form data:");
-      for (let [key, value] of formDataToSend.entries()) {
-        console.log(key, value);
       }
       
       let url = `${API_URL}/api/admin/products`;
@@ -117,6 +110,8 @@ const AdminProducts = () => {
         url = `${API_URL}/api/admin/products/${editingProduct._id}`;
         method = "PUT";
       }
+      
+      console.log("Sending request to:", url);
       
       const response = await axios({
         method: method,
@@ -128,34 +123,37 @@ const AdminProducts = () => {
         }
       });
       
-      console.log("Product saved:", response.data);
+      console.log("Response:", response.data);
       alert(editingProduct ? "Product updated successfully!" : "Product created successfully!");
       
+      // Close modal and reset form
       setShowModal(false);
       setEditingProduct(null);
       setFormData({ title: "", description: "", price: "", category: "", stock: "" });
       setImageFile(null);
       setImagePreview("");
-      fetchProducts();
+      
+      // Refresh products list
+      await fetchProducts();
       
     } catch (error) {
       console.error("Error saving product:", error);
       console.error("Error response:", error.response?.data);
       alert(error.response?.data?.message || "Error saving product");
-    } finally {
-      setLoading(false);
     }
-  };;
+  };
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        await apiClient.delete(endpoints.products.admin.delete(id));
+        await axios.delete(`${API_URL}/api/admin/products/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         alert("Product deleted successfully!");
-        fetchProducts();
+        await fetchProducts();
       } catch (error) {
         console.error("Error deleting product:", error);
-        alert(error.response?.data?.message || "Error deleting product");
+        alert("Error deleting product");
       }
     }
   };
@@ -169,24 +167,12 @@ const AdminProducts = () => {
       category: product.category?._id || product.category,
       stock: product.stock,
     });
-    setImagePreview(getImageUrl(product.image));
+    setImagePreview(product.image ? `${API_URL}${product.image}` : "");
     setImageFile(null);
     setShowModal(true);
   };
 
-  if (loading && products.length === 0) {
-    return <div className="loading">Loading products...</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="error-container">
-        <h2>Error Loading Products</h2>
-        <p>{error}</p>
-        <button onClick={fetchProducts}>Try Again</button>
-      </div>
-    );
-  }
+  if (loading) return <div className="loading">Loading products...</div>;
 
   return (
     <div className="admin-container">
@@ -216,9 +202,9 @@ const AdminProducts = () => {
               <tr key={product._id}>
                 <td>
                   <img 
-                    src={getImageUrl(product.image)} 
+                    src={`${API_URL}${product.image}`} 
                     alt={product.title} 
-                    className="product-thumb"
+                    style={{ width: 50, height: 50, objectFit: "cover", borderRadius: "4px" }}
                     onError={(e) => e.target.src = "https://placehold.co/50x50?text=No+Image"}
                   />
                 </td>
@@ -240,7 +226,6 @@ const AdminProducts = () => {
         <div className="modal">
           <div className="modal-content">
             <h2>{editingProduct ? "Edit Product" : "Add Product"}</h2>
-            {error && <div className="error-message">{error}</div>}
             <form onSubmit={handleSubmit}>
               <input
                 type="text"
@@ -255,7 +240,7 @@ const AdminProducts = () => {
                 value={formData.description}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
                 required
-                rows="4"
+                rows="3"
               />
               
               <input
@@ -288,42 +273,36 @@ const AdminProducts = () => {
               </select>
               
               <div className="image-upload">
-                <label>Product Image {editingProduct ? "(Leave empty to keep current)" : "*"}</label>
+                <label>Product Image {!editingProduct && "*"}</label>
                 {editingProduct && imagePreview && !imageFile && (
                   <div className="current-image">
                     <p>Current Image:</p>
-                    <img src={imagePreview} alt="Current" className="current-image-preview" />
+                    <img src={imagePreview} alt="Current" style={{ width: 100 }} />
                   </div>
                 )}
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
-                  className="file-input"
                   required={!editingProduct}
                 />
                 {imageFile && imagePreview && (
                   <div className="image-preview">
-                    <p>New Image Preview:</p>
-                    <img src={imagePreview} alt="Preview" />
+                    <p>Preview:</p>
+                    <img src={imagePreview} alt="Preview" style={{ width: 100 }} />
                   </div>
                 )}
               </div>
               
               <div className="modal-buttons">
-                <button type="submit" disabled={loading}>
-                  {loading ? "Saving..." : "Save"}
-                </button>
+                <button type="submit">Save</button>
                 <button type="button" onClick={() => {
                   setShowModal(false);
                   setEditingProduct(null);
                   setFormData({ title: "", description: "", price: "", category: "", stock: "" });
                   setImageFile(null);
                   setImagePreview("");
-                  setError(null);
-                }}>
-                  Cancel
-                </button>
+                }}>Cancel</button>
               </div>
             </form>
           </div>
