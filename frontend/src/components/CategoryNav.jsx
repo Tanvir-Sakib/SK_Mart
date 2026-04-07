@@ -73,17 +73,6 @@ const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterRes
           🏠 Home
         </button>
 
-        <div className="search-container">
-          <input
-            type="text"
-            className="search-input-nav"
-            placeholder="🔍 Search products..."
-            value={localSearchTerm}
-            onChange={handleSearchChange}
-            autoComplete="off"
-          />
-        </div>
-
         <div className="categories-scroll">
           {categories.map((category) => (
             <button
@@ -94,6 +83,17 @@ const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterRes
               {category.name}
             </button>
           ))}
+          
+        </div>
+                <div className="search-container">
+          <input
+            type="text"
+            className="search-input-nav"
+            placeholder="🔍 Search products..."
+            value={localSearchTerm}
+            onChange={handleSearchChange}
+            autoComplete="off"
+          />
         </div>
       </div>
     </div>
