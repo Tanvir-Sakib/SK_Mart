@@ -3,7 +3,7 @@ import { AuthContext } from "../context/AuthContext";
 import { apiClient, endpoints } from "../utils/api";
 
 const Profile = () => {
-  const { token, user, login } = useContext(AuthContext);
+  const { token, user, updateUser, logout } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -17,11 +17,11 @@ const Profile = () => {
 
   useEffect(() => {
     if (user) {
-      setFormData({
-        ...formData,
+      setFormData(prev => ({
+        ...prev,
         name: user.name || "",
         email: user.email || ""
-      });
+      }));
     }
   }, [user]);
 
@@ -47,19 +47,24 @@ const Profile = () => {
         }
       );
 
-      // Update user in context and localStorage
-      const updatedUser = { ...user, name: formData.name, email: formData.email };
-      login(token, updatedUser);
+      console.log("Profile update response:", response.data);
+      
+      // Update user in context
+      updateUser({ name: formData.name, email: formData.email });
       
       setMessage("Profile updated successfully!");
       
-      // Reload to reflect changes
+      // Don't reload, just let the context update propagate
       setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+        setMessage("");
+      }, 3000);
       
     } catch (err) {
+      console.error("Profile update error:", err);
       setError(err.response?.data?.message || "Error updating profile");
+      setTimeout(() => {
+        setError("");
+      }, 3000);
     } finally {
       setLoading(false);
     }
@@ -70,11 +75,13 @@ const Profile = () => {
     
     if (formData.newPassword !== formData.confirmPassword) {
       setError("New passwords do not match");
+      setTimeout(() => setError(""), 3000);
       return;
     }
 
     if (formData.newPassword.length < 6) {
       setError("Password must be at least 6 characters");
+      setTimeout(() => setError(""), 3000);
       return;
     }
 
@@ -91,19 +98,31 @@ const Profile = () => {
         }
       );
 
-      setMessage("Password changed successfully!");
+      setMessage("Password changed successfully! Please login again.");
       setFormData({
         ...formData,
         currentPassword: "",
         newPassword: "",
         confirmPassword: ""
       });
+      
+      // Logout after password change
+      setTimeout(() => {
+        logout();
+        window.location.href = "/login";
+      }, 2000);
+      
     } catch (err) {
       setError(err.response?.data?.message || "Error changing password");
+      setTimeout(() => setError(""), 3000);
     } finally {
       setLoading(false);
     }
   };
+
+  if (!user) {
+    return <div className="loading">Loading profile...</div>;
+  }
 
   return (
     <div className="profile-container">
@@ -113,6 +132,7 @@ const Profile = () => {
       {error && <div className="error-message">{error}</div>}
       
       <div className="profile-sections">
+        {/* Profile Information Section */}
         <div className="profile-section">
           <h2>Profile Information</h2>
           <form onSubmit={handleProfileUpdate}>
@@ -144,6 +164,7 @@ const Profile = () => {
           </form>
         </div>
 
+        {/* Change Password Section */}
         <div className="profile-section">
           <h2>Change Password</h2>
           <form onSubmit={handlePasswordUpdate}>

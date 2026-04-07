@@ -13,8 +13,14 @@ export const AuthProvider = ({ children }) => {
     const savedUser = localStorage.getItem("user");
     
     if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      try {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+      }
     }
     setLoading(false);
   }, []);
@@ -36,13 +42,20 @@ export const AuthProvider = ({ children }) => {
 
   const updateUser = (updatedUserData) => {
     console.log("Updating user data:", updatedUserData);
-    const newUserData = { ...user, ...updatedUserData };
+    const currentUser = user || JSON.parse(localStorage.getItem("user") || "{}");
+    const newUserData = { ...currentUser, ...updatedUserData };
+    
     setUser(newUserData);
     localStorage.setItem("user", JSON.stringify(newUserData));
+    
+    // Force a small delay to ensure state updates propagate
+    setTimeout(() => {
+      window.dispatchEvent(new Event('storage'));
+    }, 100);
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, loading, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ token, user, loading, login, logout, updateUser, setUser }}>
       {children}
     </AuthContext.Provider>
   );
