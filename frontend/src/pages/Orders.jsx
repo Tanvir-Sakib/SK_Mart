@@ -7,7 +7,7 @@ const Orders = () => {
   const { token } = useContext(AuthContext);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // Add this line - the missing state
+  const [error, setError] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   useEffect(() => {
