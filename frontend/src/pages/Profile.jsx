@@ -3,7 +3,7 @@ import { AuthContext } from "../context/AuthContext";
 import { apiClient, endpoints } from "../utils/api";
 
 const Profile = () => {
-  const { token, user, updateUser } = useContext(AuthContext); // Add updateUser
+  const { token, user, login } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -47,20 +47,18 @@ const Profile = () => {
         }
       );
 
-      console.log("Profile update response:", response.data);
-      
-      // Update user in context using updateUser function
-      updateUser({ name: formData.name, email: formData.email });
+      // Update user in context and localStorage
+      const updatedUser = { ...user, name: formData.name, email: formData.email };
+      login(token, updatedUser);
       
       setMessage("Profile updated successfully!");
       
-      // Refresh the page after 1 second to ensure all components get updated user
+      // Reload to reflect changes
       setTimeout(() => {
         window.location.reload();
-      }, 1000);
+      }, 1500);
       
     } catch (err) {
-      console.error("Profile update error:", err);
       setError(err.response?.data?.message || "Error updating profile");
     } finally {
       setLoading(false);
@@ -101,16 +99,11 @@ const Profile = () => {
         confirmPassword: ""
       });
     } catch (err) {
-      console.error("Password change error:", err);
       setError(err.response?.data?.message || "Error changing password");
     } finally {
       setLoading(false);
     }
   };
-
-  if (!user) {
-    return <div className="loading">Loading profile...</div>;
-  }
 
   return (
     <div className="profile-container">
@@ -120,7 +113,6 @@ const Profile = () => {
       {error && <div className="error-message">{error}</div>}
       
       <div className="profile-sections">
-        {/* Profile Information Section */}
         <div className="profile-section">
           <h2>Profile Information</h2>
           <form onSubmit={handleProfileUpdate}>
@@ -152,7 +144,6 @@ const Profile = () => {
           </form>
         </div>
 
-        {/* Change Password Section */}
         <div className="profile-section">
           <h2>Change Password</h2>
           <form onSubmit={handlePasswordUpdate}>
