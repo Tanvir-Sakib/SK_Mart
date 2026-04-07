@@ -25,28 +25,28 @@ const Cart = () => {
 
   const handleIncrement = async (productId) => {
     console.log("Increment clicked for:", productId);
-    if (incrementQuantity && typeof incrementQuantity === 'function') {
+    if (incrementQuantity) {
       await incrementQuantity(productId);
     } else {
-      console.error("incrementQuantity is not a function");
+      console.error("incrementQuantity is undefined");
     }
   };
 
   const handleDecrement = async (productId) => {
     console.log("Decrement clicked for:", productId);
-    if (decrementQuantity && typeof decrementQuantity === 'function') {
+    if (decrementQuantity) {
       await decrementQuantity(productId);
     } else {
-      console.error("decrementQuantity is not a function");
+      console.error("decrementQuantity is undefined");
     }
   };
 
   const handleRemove = async (productId) => {
     console.log("Remove clicked for:", productId);
-    if (removeFromCart && typeof removeFromCart === 'function') {
+    if (removeFromCart) {
       await removeFromCart(productId);
     } else {
-      console.error("removeFromCart is not a function");
+      console.error("removeFromCart is undefined");
     }
   };
 
