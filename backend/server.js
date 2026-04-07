@@ -28,6 +28,14 @@ const connectDB = async () => {
 
 connectDB();
 
+const fs = require("fs");
+
+// Create uploads directory if it doesn't exist
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads");
+  console.log("Uploads folder created");
+}
+
 // Configure multer for image upload
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
