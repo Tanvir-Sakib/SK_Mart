@@ -2,9 +2,7 @@ import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
-import { formatPrice } from "../utils/currency";
-import { apiClient, endpoints, getApiUrl} from '../utils/api';
-import axios from "axios";
+import { apiClient, endpoints, getImageUrl } from "../utils/api";
 
 const Checkout = () => {
   const { cart, cartCount, clearCart } = useContext(CartContext);
@@ -38,57 +36,73 @@ const Checkout = () => {
     });
   };
 
-const handlePlaceOrder = async (e) => {
-  e.preventDefault();
-  
-  // Validate shipping details
-  if (!shippingDetails.fullName || !shippingDetails.address || 
-      !shippingDetails.city || !shippingDetails.phone) {
-    alert("Please fill in all required fields");
-    return;
-  }
+  const handlePlaceOrder = async (e) => {
+    e.preventDefault();
+    
+    // Validate shipping details
+    if (!shippingDetails.fullName || !shippingDetails.address || 
+        !shippingDetails.city || !shippingDetails.phone) {
+      alert("Please fill in all required fields");
+      return;
+    }
 
-  setLoading(true);
-  
-  try {
-    const orderData = {
-      shippingAddress: shippingDetails,
-      paymentMethod: paymentMethod,
-      items: cart.items.map(item => ({
-        product: item.product._id,
-        quantity: item.quantity,
-        price: item.product.price
-      })),
-      totalAmount: calculateTotal()
-    };
+    setLoading(true);
+    
+    try {
+      const orderData = {
+        shippingAddress: shippingDetails,
+        paymentMethod: paymentMethod,
+        items: cart.items.map(item => ({
+          product: item.product._id,
+          quantity: item.quantity,
+          price: item.product.price
+        })),
+        totalAmount: calculateTotal()
+      };
 
-    const response = await apiClient.post(endpoints.orders.create, orderData, {
-      headers: { 
-        Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      }
+      const response = await apiClient.post(endpoints.orders.create, orderData);
+
+      console.log("Order placed:", response.data);
+      setOrderPlaced(true);
+      
+      // Clear cart after successful order
+      await clearCart();
+      
+      // Redirect to order confirmation after 2 seconds
+      setTimeout(() => {
+        navigate("/orders");
+      }, 2000);
+      
+    } catch (error) {
+      console.error("Order placement error:", error);
+      alert(error.response?.data?.message || "Failed to place order. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (orderPlaced) {
+    return (
+      <div className="order-success">
+        <div className="success-icon">✓</div>
+        <h2>Order Placed Successfully!</h2>
+        <p>Your order has been received and is being processed.</p>
+        <p>Redirecting to your orders...</p>
+      </div>
     );
-
-    console.log("Order placed:", response.data);
-    
-    // Clear cart in frontend context
-    await clearCart(); // This should clear the cart in your CartContext
-    
-    setOrderPlaced(true);
-    
-    // Redirect to orders page after 2 seconds
-    setTimeout(() => {
-      navigate("/orders");
-    }, 2000);
-    
-  } catch (error) {
-    console.error("Order placement error:", error);
-    alert(error.response?.data?.message || "Failed to place order. Please try again.");
-  } finally {
-    setLoading(false);
   }
-};
+
+  if (!cart.items || cart.items.length === 0) {
+    return (
+      <div className="cart-empty">
+        <h2>Your cart is empty</h2>
+        <p>Add some products to your cart before checking out.</p>
+        <button onClick={() => navigate("/")} className="continue-shopping-btn">
+          Continue Shopping
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="checkout-wrapper">
@@ -195,17 +209,18 @@ const handlePlaceOrder = async (e) => {
             <div className="summary-items">
               {cart.items.map((item) => (
                 <div key={item.product?._id} className="summary-item">
-                  <img src={getImageUrl(item.product?.image)} 
-                  alt={item.product?.title}
+                  <img 
+                    src={getImageUrl(item.product?.image)} 
+                    alt={item.product?.title}
+                    onError={(e) => e.target.src = "https://placehold.co/60x60?text=No+Image"}
                   />
                   <div className="summary-item-details">
                     <h4>{item.product?.title}</h4>
                     <p>Quantity: {item.quantity}</p>
-                    <p>{formatPrice(item.product?.price)}</p>
-                    
+                    <p>৳ {item.product?.price}</p>
                   </div>
                   <div className="summary-item-total">
-                    {formatPrice((item.product?.price || 0) * item.quantity)}
+                    ৳ {(item.product?.price || 0) * item.quantity}
                   </div>
                 </div>
               ))}
@@ -214,7 +229,7 @@ const handlePlaceOrder = async (e) => {
             <div className="summary-totals">
               <div className="summary-row">
                 <span>Subtotal:</span>
-                <span>{formatPrice(calculateTotal())}</span>
+                <span>৳ {calculateTotal()}</span>
               </div>
               <div className="summary-row">
                 <span>Shipping:</span>
@@ -222,7 +237,7 @@ const handlePlaceOrder = async (e) => {
               </div>
               <div className="summary-row total">
                 <span>Total:</span>
-                <span>{formatPrice(calculateTotal())}</span>
+                <span>৳ {calculateTotal()}</span>
               </div>
             </div>
 
