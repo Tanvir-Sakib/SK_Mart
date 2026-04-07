@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-import { apiClient, endpoints, getImageUrl } from "../utils/api";
+import { apiClient, endpoints } from "../utils/api";
 
 const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterReset }) => {
   const [categories, setCategories] = useState([]);
@@ -13,10 +12,18 @@ const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterRes
 
   const fetchCategories = async () => {
     try {
-      console.log("Fetching categories...");
+      setLoading(true);
       const response = await apiClient.get(endpoints.categories.getAll);
-      console.log("Categories fetched:", response.data);
-      setCategories(response.data);
+      console.log("Categories response:", response.data);
+      
+      let categoriesData = [];
+      if (Array.isArray(response.data)) {
+        categoriesData = response.data;
+      } else if (response.data && Array.isArray(response.data.categories)) {
+        categoriesData = response.data.categories;
+      }
+      
+      setCategories(categoriesData);
     } catch (error) {
       console.error("Error fetching categories:", error);
     } finally {
@@ -25,12 +32,10 @@ const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterRes
   };
 
   const handleCategoryClick = (categoryId) => {
-    console.log("Category clicked:", categoryId);
     onCategorySelect(categoryId);
   };
 
   const handleHomeClick = () => {
-    console.log("Home clicked - resetting filters");
     onFilterReset();
     setSearchTerm("");
   };
@@ -54,7 +59,6 @@ const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterRes
   return (
     <div className="category-nav">
       <div className="category-nav-container">
-        {/* 1st: Home Button */}
         <button 
           className={`category-btn home-btn ${!selectedCategory ? "active" : ""}`}
           onClick={handleHomeClick}
@@ -62,7 +66,17 @@ const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterRes
           🏠 Home
         </button>
 
-        {/* 2nd: Categories */}
+        <div className="search-container">
+          <input
+            type="text"
+            className="search-input-nav"
+            placeholder="🔍 Search products..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            autoComplete="off"
+          />
+        </div>
+
         <div className="categories-scroll">
           {categories.map((category) => (
             <button
@@ -73,18 +87,6 @@ const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterRes
               {category.name}
             </button>
           ))}
-        </div>
-
-        {/* 3rd: Search Bar */}
-        <div className="search-container">
-          <input
-            type="text"
-            className="search-input-nav"
-            placeholder="🔍 Search products..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            autoComplete="off"
-          />
         </div>
       </div>
     </div>

@@ -15,7 +15,6 @@ const Products = () => {
     fetchProducts();
   }, []);
 
-  // Filter products when category or search changes
   useEffect(() => {
     filterProducts();
   }, [products, selectedCategory, searchTerm]);
@@ -24,20 +23,31 @@ const Products = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiClient.get(endpoints.products.getAll);
+      
+      // Build query params for filtering
+      const params = new URLSearchParams();
+      if (selectedCategory) params.append("category", selectedCategory);
+      if (searchTerm) params.append("search", searchTerm);
+      
+      const url = params.toString() 
+        ? `${endpoints.products.getAll}?${params}` 
+        : endpoints.products.getAll;
+      
+      console.log("Fetching products from:", url);
+      const response = await apiClient.get(url);
       console.log("Products API response:", response.data);
       
-      // IMPORTANT FIX: Extract products array from response
+      // Handle different response formats
       let productsArray = [];
       if (response.data && Array.isArray(response.data.products)) {
-        // This is your case - response has { products: [...] }
+        // Format: { products: [...], total: X, page: 1 }
         productsArray = response.data.products;
       } else if (Array.isArray(response.data)) {
-        // Direct array response
+        // Format: direct array
         productsArray = response.data;
-      } else {
-        console.error("Unexpected response format:", response.data);
-        productsArray = [];
+      } else if (response.data && typeof response.data === 'object') {
+        // Try to find any array property
+        productsArray = Object.values(response.data).find(val => Array.isArray(val)) || [];
       }
       
       console.log("Products extracted:", productsArray.length);
@@ -45,7 +55,10 @@ const Products = () => {
       setFilteredProducts(productsArray);
     } catch (error) {
       console.error("Error fetching products:", error);
+      console.error("Error response:", error.response?.data);
       setError(error.response?.data?.message || "Failed to fetch products");
+      setProducts([]);
+      setFilteredProducts([]);
     } finally {
       setLoading(false);
     }
@@ -56,15 +69,14 @@ const Products = () => {
     
     let filtered = [...products];
 
-    // Filter by category
     if (selectedCategory) {
+      const categoryId = selectedCategory;
       filtered = filtered.filter((product) => {
         const productCategoryId = product.category?._id || product.category;
-        return productCategoryId === selectedCategory;
+        return productCategoryId === categoryId;
       });
     }
 
-    // Filter by search term
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
@@ -74,21 +86,25 @@ const Products = () => {
       );
     }
 
-    console.log("Filtered products:", filtered.length);
     setFilteredProducts(filtered);
   };
 
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
+    // Refetch products with category filter
+    fetchProducts();
   };
 
   const handleSearch = (term) => {
     setSearchTerm(term);
+    // Refetch products with search term
+    fetchProducts();
   };
 
   const handleFilterReset = () => {
     setSelectedCategory("");
     setSearchTerm("");
+    fetchProducts();
   };
 
   if (loading) {
