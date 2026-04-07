@@ -98,24 +98,64 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const updateQuantity = async (productId, quantity) => {
-    if (!token) return false;
+// Make sure these functions are defined in CartContext
+const incrementQuantity = async (productId) => {
+  if (!token) return false;
 
-    try {
-      setLoading(true);
-      const updateEndpoint = endpoints.cart.update(productId);
-      console.log("Update endpoint:", updateEndpoint);
-      const response = await apiClient.put(updateEndpoint, { quantity });
-      console.log("Update quantity response:", response.data);
+  try {
+    setLoading(true);
+    const response = await apiClient.put(endpoints.cart.update(productId), { 
+      quantity: (cart.items.find(item => item.product === productId)?.quantity || 0) + 1 
+    });
+    await fetchCart();
+    return true;
+  } catch (error) {
+    console.error("Error incrementing quantity:", error);
+    return false;
+  } finally {
+    setLoading(false);
+  }
+};
+
+const decrementQuantity = async (productId) => {
+  if (!token) return false;
+
+  try {
+    setLoading(true);
+    const currentItem = cart.items.find(item => item.product === productId);
+    const newQuantity = (currentItem?.quantity || 0) - 1;
+    
+    if (newQuantity <= 0) {
+      await removeFromCart(productId);
+    } else {
+      await apiClient.put(endpoints.cart.update(productId), { quantity: newQuantity });
       await fetchCart();
-      return true;
-    } catch (error) {
-      console.error("Error updating quantity:", error);
-      return false;
-    } finally {
-      setLoading(false);
     }
-  };
+    return true;
+  } catch (error) {
+    console.error("Error decrementing quantity:", error);
+    return false;
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Make sure these are in the Context value
+return (
+  <CartContext.Provider value={{
+    cart,
+    cartCount,
+    loading,
+    addToCart,
+    removeFromCart,
+    incrementQuantity,  // ← Must be included
+    decrementQuantity,  // ← Must be included
+    clearCart,
+    fetchCart
+  }}>
+    {children}
+  </CartContext.Provider>
+);
 
   const clearCart = async () => {
     if (!token) return false;

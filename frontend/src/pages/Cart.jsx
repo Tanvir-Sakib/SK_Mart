@@ -1,9 +1,8 @@
 import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { formatPrice } from "../utils/currency";
-import { apiClient, endpoints, getImageUrl } from '../utils/api';
+import { getImageUrl } from "../utils/api";
 
 const Cart = () => {
   const { 
@@ -20,8 +19,35 @@ const Cart = () => {
   const calculateTotal = () => {
     if (!cart.items) return 0;
     return cart.items.reduce((total, item) => {
-      return total + (item.product?.price || 0) * item.quantity;
+      return total + (item.product?.price || 0) * (item.quantity || 0);
     }, 0);
+  };
+
+  const handleIncrement = async (productId) => {
+    console.log("Increment clicked for:", productId);
+    if (incrementQuantity && typeof incrementQuantity === 'function') {
+      await incrementQuantity(productId);
+    } else {
+      console.error("incrementQuantity is not a function");
+    }
+  };
+
+  const handleDecrement = async (productId) => {
+    console.log("Decrement clicked for:", productId);
+    if (decrementQuantity && typeof decrementQuantity === 'function') {
+      await decrementQuantity(productId);
+    } else {
+      console.error("decrementQuantity is not a function");
+    }
+  };
+
+  const handleRemove = async (productId) => {
+    console.log("Remove clicked for:", productId);
+    if (removeFromCart && typeof removeFromCart === 'function') {
+      await removeFromCart(productId);
+    } else {
+      console.error("removeFromCart is not a function");
+    }
   };
 
   const handleCheckout = () => {
@@ -63,7 +89,7 @@ const Cart = () => {
               <img 
                 src={getImageUrl(item.product?.image)} 
                 alt={item.product?.title}
-                onError={(e) => e.target.src = "https://via.placeholder.com/80x80?text=No+Image"}
+                onError={(e) => e.target.src = "https://placehold.co/80x80?text=No+Image"}
               />
               <div>
                 <h4>{item.product?.title}</h4>
@@ -72,20 +98,19 @@ const Cart = () => {
             </div>
             
             <div className="cart-item-price">
-              {formatPrice(item.product?.price)}
+              ৳ {item.product?.price}
             </div>
-
             
             <div className="cart-item-quantity">
               <button 
-                onClick={() => decrementQuantity(item.product?._id)}
+                onClick={() => handleDecrement(item.product?._id)}
                 disabled={item.quantity <= 1}
               >
                 -
               </button>
               <span>{item.quantity}</span>
               <button 
-                onClick={() => incrementQuantity(item.product?._id)}
+                onClick={() => handleIncrement(item.product?._id)}
                 disabled={item.quantity >= item.product?.stock}
               >
                 +
@@ -93,12 +118,12 @@ const Cart = () => {
             </div>
             
             <div className="cart-item-total">
-              {formatPrice((item.product?.price || 0) * item.quantity)}
+              ৳ {(item.product?.price || 0) * (item.quantity || 0)}
             </div>
             
             <button 
               className="remove-btn"
-              onClick={() => removeFromCart(item.product?._id)}
+              onClick={() => handleRemove(item.product?._id)}
             >
               Remove
             </button>
@@ -111,8 +136,7 @@ const Cart = () => {
           <h3>Order Summary</h3>
           <div className="summary-row">
             <span>Subtotal:</span>
-            <span>{formatPrice(calculateTotal())}</span>
-            
+            <span>৳ {calculateTotal()}</span>
           </div>
           <div className="summary-row">
             <span>Shipping:</span>
@@ -120,11 +144,11 @@ const Cart = () => {
           </div>
           <div className="summary-row total">
             <span>Total:</span>
-            <span>{formatPrice(calculateTotal())}</span>
+            <span>৳ {calculateTotal()}</span>
           </div>
         </div>
         <button className="checkout-btn" onClick={handleCheckout}>
-        Proceed to Checkout
+          Proceed to Checkout
         </button>
       </div>
     </div>
