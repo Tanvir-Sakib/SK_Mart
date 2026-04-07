@@ -27,19 +27,19 @@ const AdminProducts = () => {
     fetchCategories();
   }, []);
 
+// In fetchProducts function
   const fetchProducts = async () => {
     try {
-      const response = await apiClient.get(endpoints.admin.products, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setProducts(response.data);
+      const response = await apiClient.get(endpoints.products.admin.getAll);
+      // Ensure products is an array
+      const productsData = Array.isArray(response.data) ? response.data : 
+                          (response.data.products ? response.data.products : []);
+      setProducts(productsData);
     } catch (error) {
       console.error("Error fetching products:", error);
-    } finally {
-      setLoading(false);
+      setProducts([]);
     }
   };
-
   const fetchCategories = async () => {
     try {
       const response = await apiClient.get(endpoints.admin.categories, {

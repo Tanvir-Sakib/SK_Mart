@@ -20,20 +20,26 @@ export const CartProvider = ({ children }) => {
     }
   }, [token]);
 
+  // In fetchCart function, add safety checks
   const fetchCart = async () => {
     if (!token) return;
     
     try {
       setLoading(true);
-      const response = await apiClient.get(endpoints.cart, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await apiClient.get(endpoints.cart.get);
       console.log("Cart fetched:", response.data);
-      setCart(response.data);
-      const count = response.data.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+      
+      // Ensure cart has items array
+      const cartData = response.data || { items: [] };
+      setCart(cartData);
+      
+      // Safely calculate cart count
+      const count = cartData.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
       setCartCount(count);
     } catch (error) {
       console.error("Error fetching cart:", error);
+      setCart({ items: [] });
+      setCartCount(0);
     } finally {
       setLoading(false);
     }
