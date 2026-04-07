@@ -1,7 +1,7 @@
 // src/utils/api.js
 
 // Get the API URL from environment variables or use localhost for development
-export const API_URL = import.meta.env.VITE_API_URL || 'https://skmart-y04r.onrender.com';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 // Helper function for API endpoints
 export const getApiUrl = (endpoint) => {
@@ -9,6 +9,7 @@ export const getApiUrl = (endpoint) => {
 };
 
 // Common API endpoints
+// src/utils/api.js
 export const endpoints = {
   // Auth endpoints
   auth: {
@@ -17,7 +18,6 @@ export const endpoints = {
     updateProfile: '/api/auth/update-profile',
     changePassword: '/api/auth/change-password',
   },
-  
   // Product endpoints
   products: {
     getAll: '/api/products',
@@ -29,7 +29,6 @@ export const endpoints = {
       delete: (id) => `/api/admin/products/${id}`,
     }
   },
-  
   // Category endpoints
   categories: {
     getAll: '/api/categories',
@@ -41,7 +40,6 @@ export const endpoints = {
       delete: (id) => `/api/admin/categories/${id}`,
     }
   },
-  
   // Cart endpoints
   cart: {
     get: '/api/cart',
@@ -50,7 +48,6 @@ export const endpoints = {
     remove: (productId) => `/api/cart/remove/${productId}`,
     clear: '/api/cart/clear',
   },
-  
   // Order endpoints
   orders: {
     create: '/api/orders',
@@ -60,7 +57,6 @@ export const endpoints = {
       updateStatus: (id) => `/api/admin/orders/${id}/status`,
     }
   },
-  
   // Admin endpoints
   admin: {
     stats: '/api/admin/stats',
@@ -70,7 +66,6 @@ export const endpoints = {
       delete: (id) => `/api/admin/users/${id}`,
     }
   },
-  
   // Upload endpoint
   upload: '/api/upload',
 };
