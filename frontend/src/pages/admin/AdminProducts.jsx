@@ -83,59 +83,53 @@ const AdminProducts = () => {
     setError(null);
 
     try {
-      if (editingProduct) {
-        // UPDATE PRODUCT - Send as JSON
-        const productData = {
-          title: formData.title,
-          description: formData.description,
-          price: Number(formData.price),
-          category: formData.category,
-          stock: Number(formData.stock),
-        };
-        
-        // Only upload image if a new one is selected
-        if (imageFile) {
-          const uploadData = new FormData();
-          uploadData.append("image", imageFile);
-          
-          const uploadResponse = await axios.post(`${API_URL}/api/upload`, uploadData, {
-            headers: { 
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data"
-            }
-          });
-          productData.image = uploadResponse.data.imageUrl;
-        }
-        
-        await apiClient.put(endpoints.products.admin.update(editingProduct._id), productData);
-        alert("Product updated successfully!");
-      } else {
-        // CREATE NEW PRODUCT - Must use FormData for image
-        if (!imageFile) {
-          alert("Please select an image for the product");
-          setLoading(false);
-          return;
-        }
-        
-        const formDataToSend = new FormData();
-        formDataToSend.append("title", formData.title);
-        formDataToSend.append("description", formData.description);
-        formDataToSend.append("price", formData.price);
-        formDataToSend.append("category", formData.category);
-        formDataToSend.append("stock", formData.stock);
-        formDataToSend.append("image", imageFile);
-        
-        // Use axios directly with FormData (not apiClient because of multipart)
-        const response = await axios.post(`${API_URL}/api/admin/products`, formDataToSend, {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data"
-          }
-        });
-        
-        console.log("Create product response:", response.data);
-        alert("Product created successfully!");
+      // Validate form data
+      if (!formData.title || !formData.description || !formData.price || !formData.category || !formData.stock) {
+        alert("Please fill in all fields");
+        setLoading(false);
+        return;
       }
+
+      const formDataToSend = new FormData();
+      formDataToSend.append("title", formData.title);
+      formDataToSend.append("description", formData.description);
+      formDataToSend.append("price", formData.price);
+      formDataToSend.append("category", formData.category);
+      formDataToSend.append("stock", formData.stock);
+      
+      if (imageFile) {
+        formDataToSend.append("image", imageFile);
+      } else if (!editingProduct) {
+        alert("Please select an image for the product");
+        setLoading(false);
+        return;
+      }
+      
+      console.log("Sending form data:");
+      for (let [key, value] of formDataToSend.entries()) {
+        console.log(key, value);
+      }
+      
+      let url = `${API_URL}/api/admin/products`;
+      let method = "POST";
+      
+      if (editingProduct) {
+        url = `${API_URL}/api/admin/products/${editingProduct._id}`;
+        method = "PUT";
+      }
+      
+      const response = await axios({
+        method: method,
+        url: url,
+        data: formDataToSend,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data"
+        }
+      });
+      
+      console.log("Product saved:", response.data);
+      alert(editingProduct ? "Product updated successfully!" : "Product created successfully!");
       
       setShowModal(false);
       setEditingProduct(null);
@@ -147,12 +141,11 @@ const AdminProducts = () => {
     } catch (error) {
       console.error("Error saving product:", error);
       console.error("Error response:", error.response?.data);
-      setError(error.response?.data?.message || "Error saving product");
       alert(error.response?.data?.message || "Error saving product");
     } finally {
       setLoading(false);
     }
-  };
+  };;
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
