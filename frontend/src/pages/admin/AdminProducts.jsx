@@ -1,15 +1,14 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import axios from "axios";
-import { formatPrice } from "../../utils/currency";
+import { apiClient, endpoints, getImageUrl } from "../../utils/api";
 import "./Admin.css";
-import { apiClient, endpoints, getImageUrl } from '../../utils/api';
 
 const AdminProducts = () => {
   const { token } = useContext(AuthContext);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [imageFile, setImageFile] = useState(null);
@@ -27,27 +26,52 @@ const AdminProducts = () => {
     fetchCategories();
   }, []);
 
-// In fetchProducts function
   const fetchProducts = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      console.log("Fetching products from admin endpoint...");
       const response = await apiClient.get(endpoints.products.admin.getAll);
-      // Ensure products is an array
-      const productsData = Array.isArray(response.data) ? response.data : 
-                          (response.data.products ? response.data.products : []);
+      console.log("Products response:", response.data);
+      
+      // Handle different response formats
+      let productsData = [];
+      if (Array.isArray(response.data)) {
+        productsData = response.data;
+      } else if (response.data && Array.isArray(response.data.products)) {
+        productsData = response.data.products;
+      } else if (response.data && typeof response.data === 'object') {
+        // Try to extract any array property
+        productsData = Object.values(response.data).find(val => Array.isArray(val)) || [];
+      }
+      
+      console.log("Processed products:", productsData.length);
       setProducts(productsData);
     } catch (error) {
       console.error("Error fetching products:", error);
+      setError(error.response?.data?.message || "Failed to fetch products");
       setProducts([]);
+    } finally {
+      setLoading(false);
     }
   };
+
   const fetchCategories = async () => {
     try {
-      const response = await apiClient.get(endpoints.admin.categories, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setCategories(response.data);
+      const response = await apiClient.get(endpoints.categories.admin.getAll);
+      console.log("Categories response:", response.data);
+      
+      let categoriesData = [];
+      if (Array.isArray(response.data)) {
+        categoriesData = response.data;
+      } else if (response.data && Array.isArray(response.data.categories)) {
+        categoriesData = response.data.categories;
+      }
+      
+      setCategories(categoriesData);
     } catch (error) {
       console.error("Error fetching categories:", error);
+      setCategories([]);
     }
   };
 
@@ -63,64 +87,57 @@ const AdminProducts = () => {
     }
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  try {
-    if (editingProduct) {
-      // UPDATE EXISTING PRODUCT - Image is optional
-      // Ensure stock and price are numbers
-      const productData = {
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        price: parseFloat(formData.price),
-        category: formData.category,
-        stock: parseInt(formData.stock, 10),
-      };
-      
-      // Validate numbers
-      if (isNaN(productData.price) || productData.price <= 0) {
-        alert("Please enter a valid price");
-        return;
-      }
-      
-      if (isNaN(productData.stock) || productData.stock < 0) {
-        alert("Please enter a valid stock quantity");
-        return;
-      }
-      
-      console.log("Sending update data:", productData);
-      
-      // Only upload image if a new file was selected
-      if (imageFile) {
-        const uploadData = new FormData();
-        uploadData.append("image", imageFile);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (editingProduct) {
+        // UPDATE PRODUCT
+        const productData = {
+          title: formData.title,
+          description: formData.description,
+          price: Number(formData.price),
+          category: formData.category,
+          stock: Number(formData.stock),
+        };
         
-        const uploadResponse = await apiClient.post(endpoints.upload, uploadData, {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data"
-            }
-          }
-        );
-        productData.image = uploadResponse.data.imageUrl;
+        if (imageFile) {
+          // Upload image first
+          const uploadData = new FormData();
+          uploadData.append("image", imageFile);
+          
+          const uploadResponse = await apiClient.post(endpoints.upload, uploadData, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+          productData.image = uploadResponse.data.imageUrl;
+        }
+        
+        await apiClient.put(endpoints.products.admin.update(editingProduct._id), productData);
+        alert("Product updated successfully!");
+      } else {
+        // CREATE PRODUCT
+        if (!imageFile) {
+          alert("Please select an image for the product");
+          setLoading(false);
+          return;
+        }
+        
+        const formDataToSend = new FormData();
+        formDataToSend.append("title", formData.title);
+        formDataToSend.append("description", formData.description);
+        formDataToSend.append("price", formData.price);
+        formDataToSend.append("category", formData.category);
+        formDataToSend.append("stock", formData.stock);
+        formDataToSend.append("image", imageFile);
+        
+        await apiClient.post(endpoints.products.admin.create, formDataToSend, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        alert("Product created successfully!");
       }
       
-      const response = await apiClient.put(
-        `${endpoints.admin.products}/${editingProduct._id}`,
-        productData,
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          } 
-        }
-      );
-      
-      console.log("Update response:", response.data);
-      alert("Product updated successfully!");
-      
-      // Close modal and refresh
       setShowModal(false);
       setEditingProduct(null);
       setFormData({ title: "", description: "", price: "", category: "", stock: "" });
@@ -128,61 +145,24 @@ const AdminProducts = () => {
       setImagePreview("");
       fetchProducts();
       
-    } else {
-      // CREATE NEW PRODUCT - Image is required
-      if (!imageFile) {
-        alert("Please select an image for the product");
-        return;
-      }
-      
-      const formDataToSend = new FormData();
-      formDataToSend.append("title", formData.title.trim());
-      formDataToSend.append("description", formData.description.trim());
-      formDataToSend.append("price", parseFloat(formData.price));
-      formDataToSend.append("category", formData.category);
-      formDataToSend.append("stock", parseInt(formData.stock, 10));
-      formDataToSend.append("image", imageFile);
-      
-      console.log("Creating new product");
-      
-      
-      const response = await apiClient.post(endpoints.admin.products, formDataToSend, {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data"
-          } 
-        }
-      );
-      
-      console.log("Create response:", response.data);
-      alert("Product created successfully!");
-      
-      // Close modal and refresh
-      setShowModal(false);
-      setFormData({ title: "", description: "", price: "", category: "", stock: "" });
-      setImageFile(null);
-      setImagePreview("");
-      fetchProducts();
+    } catch (error) {
+      console.error("Error saving product:", error);
+      setError(error.response?.data?.message || "Error saving product");
+      alert(error.response?.data?.message || "Error saving product");
+    } finally {
+      setLoading(false);
     }
-    
-  } catch (error) {
-    console.error("Error saving product:", error);
-    console.error("Error response:", error.response?.data);
-    alert(error.response?.data?.message || "Error saving product");
-  }
-};
+  };
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        await apiClient.delete(`${endpoints.admin.products}/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await apiClient.delete(endpoints.products.admin.delete(id));
         alert("Product deleted successfully!");
         fetchProducts();
       } catch (error) {
         console.error("Error deleting product:", error);
-        alert("Error deleting product");
+        alert(error.response?.data?.message || "Error deleting product");
       }
     }
   };
@@ -197,11 +177,23 @@ const AdminProducts = () => {
       stock: product.stock,
     });
     setImagePreview(getImageUrl(product.image));
-    setImageFile(null); // Reset file input
+    setImageFile(null);
     setShowModal(true);
   };
 
-  if (loading) return <div className="loading">Loading products...</div>;
+  if (loading && products.length === 0) {
+    return <div className="loading">Loading products...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="error-container">
+        <h2>Error Loading Products</h2>
+        <p>{error}</p>
+        <button onClick={fetchProducts}>Try Again</button>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-container">
@@ -210,47 +202,52 @@ const AdminProducts = () => {
         <button className="add-btn" onClick={() => setShowModal(true)}>+ Add Product</button>
       </div>
 
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>Image</th>
-            <th>Title</th>
-            <th>Price</th>
-            <th>Stock</th>
-            <th>Category</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((product) => (
-            <tr key={product._id}>
-              <td>
-                <img 
-                  src={getImageUrl(product.image)} 
-                  alt={product.title} 
-                  className="product-thumb" 
-                  onError={(e) => {
-                    e.target.src = "https://via.placeholder.com/50x50?text=No+Image";
-                  }}
-                />
-              </td>
-              <td>{product.title}</td>
-              <td> {formatPrice(product.price)}</td>
-              <td className={product.stock < 10 ? "low-stock" : ""}>{product.stock}</td>
-              <td>{product.category?.name || "Uncategorized"}</td>
-              <td>
-                <button className="edit-btn" onClick={() => handleEdit(product)}>Edit</button>
-                <button className="delete-btn" onClick={() => handleDelete(product._id)}>Delete</button>
-              </td>
+      {products.length === 0 ? (
+        <div className="no-data">
+          <p>No products found. Click "Add Product" to create one.</p>
+        </div>
+      ) : (
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Title</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Category</th>
+              <th>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {products.map((product) => (
+              <tr key={product._id}>
+                <td>
+                  <img 
+                    src={getImageUrl(product.image)} 
+                    alt={product.title} 
+                    className="product-thumb"
+                    onError={(e) => e.target.src = "https://placehold.co/50x50?text=No+Image"}
+                  />
+                </td>
+                <td>{product.title}</td>
+                <td>৳ {product.price}</td>
+                <td className={product.stock < 10 ? "low-stock" : ""}>{product.stock}</td>
+                <td>{product.category?.name || "N/A"}</td>
+                <td>
+                  <button className="edit-btn" onClick={() => handleEdit(product)}>Edit</button>
+                  <button className="delete-btn" onClick={() => handleDelete(product._id)}>Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
 
       {showModal && (
         <div className="modal">
           <div className="modal-content">
             <h2>{editingProduct ? "Edit Product" : "Add Product"}</h2>
+            {error && <div className="error-message">{error}</div>}
             <form onSubmit={handleSubmit}>
               <input
                 type="text"
@@ -267,7 +264,7 @@ const AdminProducts = () => {
                 required
                 rows="4"
               />
-
+              
               <input
                 type="number"
                 placeholder="Price"
@@ -275,9 +272,8 @@ const AdminProducts = () => {
                 onChange={(e) => setFormData({...formData, price: e.target.value})}
                 required
                 step="0.01"
-                min="0"
               />
-
+              
               <input
                 type="number"
                 placeholder="Stock"
@@ -298,34 +294,20 @@ const AdminProducts = () => {
                 ))}
               </select>
               
-              {/* Image Upload */}
               <div className="image-upload">
-                <label>
-                  Product Image 
-                  {editingProduct && " (Leave empty to keep current image)"}
-                  {!editingProduct && " *"}
-                </label>
-                
-                {/* Show current image when editing */}
+                <label>Product Image {editingProduct ? "(Leave empty to keep current)" : "*"}</label>
                 {editingProduct && imagePreview && !imageFile && (
                   <div className="current-image">
                     <p>Current Image:</p>
-                    <img 
-                      src={imagePreview} 
-                      alt="Current" 
-                      className="current-image-preview" 
-                    />
+                    <img src={imagePreview} alt="Current" className="current-image-preview" />
                   </div>
                 )}
-                
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
                   className="file-input"
                 />
-                
-                {/* Show new image preview */}
                 {imageFile && imagePreview && (
                   <div className="image-preview">
                     <p>New Image Preview:</p>
@@ -335,20 +317,17 @@ const AdminProducts = () => {
               </div>
               
               <div className="modal-buttons">
-                <button type="submit" className="save-btn">
-                  {editingProduct ? "Update" : "Save"}
+                <button type="submit" disabled={loading}>
+                  {loading ? "Saving..." : "Save"}
                 </button>
-                <button 
-                  type="button" 
-                  className="cancel-btn"
-                  onClick={() => {
-                    setShowModal(false);
-                    setEditingProduct(null);
-                    setFormData({ title: "", description: "", price: "", category: "", stock: "" });
-                    setImageFile(null);
-                    setImagePreview("");
-                  }}
-                >
+                <button type="button" onClick={() => {
+                  setShowModal(false);
+                  setEditingProduct(null);
+                  setFormData({ title: "", description: "", price: "", category: "", stock: "" });
+                  setImageFile(null);
+                  setImagePreview("");
+                  setError(null);
+                }}>
                   Cancel
                 </button>
               </div>
