@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import ProductCard from "../components/ProductCard";
 import CategoryNav from "../components/CategoryNav";
 import { apiClient, endpoints } from "../utils/api";
@@ -7,27 +7,36 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
+  // Debounce search term
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
+  // Fetch products when debounced search or category changes
   useEffect(() => {
-    filterProducts();
-  }, [products, selectedCategory, searchTerm]);
+    if (!loading) {
+      fetchProducts();
+    }
+  }, [debouncedSearch, selectedCategory]);
 
   const fetchProducts = async () => {
     try {
-      setLoading(true);
+      setSearchLoading(true);
       setError(null);
       
-      // Build query params for filtering
+      // Build query params
       const params = new URLSearchParams();
+      if (debouncedSearch) params.append("search", debouncedSearch);
       if (selectedCategory) params.append("category", selectedCategory);
-      if (searchTerm) params.append("search", searchTerm);
       
       const url = params.toString() 
         ? `${endpoints.products.getAll}?${params}` 
@@ -35,79 +44,49 @@ const Products = () => {
       
       console.log("Fetching products from:", url);
       const response = await apiClient.get(url);
-      console.log("Products API response:", response.data);
       
-      // Handle different response formats
+      // Extract products array
       let productsArray = [];
       if (response.data && Array.isArray(response.data.products)) {
-        // Format: { products: [...], total: X, page: 1 }
         productsArray = response.data.products;
       } else if (Array.isArray(response.data)) {
-        // Format: direct array
         productsArray = response.data;
-      } else if (response.data && typeof response.data === 'object') {
-        // Try to find any array property
-        productsArray = Object.values(response.data).find(val => Array.isArray(val)) || [];
       }
       
-      console.log("Products extracted:", productsArray.length);
       setProducts(productsArray);
       setFilteredProducts(productsArray);
     } catch (error) {
       console.error("Error fetching products:", error);
-      console.error("Error response:", error.response?.data);
       setError(error.response?.data?.message || "Failed to fetch products");
-      setProducts([]);
-      setFilteredProducts([]);
     } finally {
       setLoading(false);
+      setSearchLoading(false);
     }
-  };
-
-  const filterProducts = () => {
-    if (!products.length) return;
-    
-    let filtered = [...products];
-
-    if (selectedCategory) {
-      const categoryId = selectedCategory;
-      filtered = filtered.filter((product) => {
-        const productCategoryId = product.category?._id || product.category;
-        return productCategoryId === categoryId;
-      });
-    }
-
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (product) =>
-          (product.title && product.title.toLowerCase().includes(term)) ||
-          (product.description && product.description.toLowerCase().includes(term))
-      );
-    }
-
-    setFilteredProducts(filtered);
   };
 
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
-    // Refetch products with category filter
-    fetchProducts();
+    setLoading(true);
   };
 
   const handleSearch = (term) => {
     setSearchTerm(term);
-    // Refetch products with search term
-    fetchProducts();
+    setSearchLoading(true);
   };
 
   const handleFilterReset = () => {
     setSelectedCategory("");
     setSearchTerm("");
-    fetchProducts();
+    setDebouncedSearch("");
+    setLoading(true);
   };
 
-  if (loading) {
+  // Initial load
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  if (loading && products.length === 0) {
     return <div className="loading">Loading products...</div>;
   }
 
@@ -128,13 +107,14 @@ const Products = () => {
         selectedCategory={selectedCategory}
         onSearch={handleSearch}
         onFilterReset={handleFilterReset}
+        searchTerm={searchTerm}
       />
 
       <div className="results-info">
         <p>
-          {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""} found
+          {searchLoading ? "Searching..." : `${filteredProducts.length} product${filteredProducts.length !== 1 ? "s" : ""} found`}
           {selectedCategory && " in selected category"}
-          {searchTerm && ` for "${searchTerm}"`}
+          {debouncedSearch && ` for "${debouncedSearch}"`}
         </p>
       </div>
 

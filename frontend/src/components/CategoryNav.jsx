@@ -1,14 +1,21 @@
 import { useState, useEffect } from "react";
 import { apiClient, endpoints } from "../utils/api";
 
-const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterReset }) => {
+const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterReset, searchTerm: externalSearchTerm }) => {
   const [categories, setCategories] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(externalSearchTerm || "");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  // Sync with external search term
+  useEffect(() => {
+    if (externalSearchTerm !== undefined) {
+      setSearchTerm(externalSearchTerm);
+    }
+  }, [externalSearchTerm]);
 
   const fetchCategories = async () => {
     try {
