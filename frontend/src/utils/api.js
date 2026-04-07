@@ -1,15 +1,23 @@
 // src/utils/api.js
+import axios from "axios";
 
 // Get the API URL from environment variables or use localhost for development
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// Helper function for API endpoints
+// Helper function to get full image URL
+export const getImageUrl = (imagePath) => {
+  if (!imagePath) return 'https://placehold.co/300x300?text=No+Image';
+  if (imagePath.startsWith('http')) return imagePath;
+  const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+  return `${API_URL}${cleanPath}`;
+};
+
+// Helper function to get API endpoint URL
 export const getApiUrl = (endpoint) => {
   return `${API_URL}${endpoint}`;
 };
 
-// Common API endpoints
-// src/utils/api.js
+// Define all API endpoints - MAKE SURE THESE ARE STRINGS
 export const endpoints = {
   // Auth endpoints
   auth: {
@@ -18,6 +26,7 @@ export const endpoints = {
     updateProfile: '/api/auth/update-profile',
     changePassword: '/api/auth/change-password',
   },
+  
   // Product endpoints
   products: {
     getAll: '/api/products',
@@ -29,6 +38,7 @@ export const endpoints = {
       delete: (id) => `/api/admin/products/${id}`,
     }
   },
+  
   // Category endpoints
   categories: {
     getAll: '/api/categories',
@@ -40,14 +50,16 @@ export const endpoints = {
       delete: (id) => `/api/admin/categories/${id}`,
     }
   },
-  // Cart endpoints
+  
+  // Cart endpoints - EACH MUST BE A STRING OR FUNCTION RETURNING STRING
   cart: {
     get: '/api/cart',
-    add: '/api/cart/add',
+    add: '/api/cart',
     update: (productId) => `/api/cart/update/${productId}`,
     remove: (productId) => `/api/cart/remove/${productId}`,
     clear: '/api/cart/clear',
   },
+  
   // Order endpoints
   orders: {
     create: '/api/orders',
@@ -57,6 +69,7 @@ export const endpoints = {
       updateStatus: (id) => `/api/admin/orders/${id}/status`,
     }
   },
+  
   // Admin endpoints
   admin: {
     stats: '/api/admin/stats',
@@ -66,20 +79,12 @@ export const endpoints = {
       delete: (id) => `/api/admin/users/${id}`,
     }
   },
+  
   // Upload endpoint
   upload: '/api/upload',
 };
 
-// Helper function to get full image URL
-export const getImageUrl = (imagePath) => {
-  if (!imagePath) return 'https://placehold.co/300x300?text=No+Image';
-  if (imagePath.startsWith('http')) return imagePath;
-  const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
-  return `${API_URL}${cleanPath}`;
-};
-// Axios instance with default config (optional but recommended)
-import axios from 'axios';
-
+// Create axios instance with default config
 export const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
@@ -90,6 +95,12 @@ export const apiClient = axios.create({
 // Add token to requests if it exists
 apiClient.interceptors.request.use(
   (config) => {
+    // Ensure URL is a string
+    if (config.url && typeof config.url !== 'string') {
+      console.error('Invalid URL type:', config.url);
+      config.url = String(config.url);
+    }
+    
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -97,6 +108,15 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for error handling
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.response?.data || error.message);
     return Promise.reject(error);
   }
 );

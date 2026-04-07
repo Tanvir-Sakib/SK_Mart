@@ -1,7 +1,6 @@
 import { createContext, useState, useContext, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
-import axios from "axios";
-import { apiClient, endpoints } from '../utils/api';
+import { apiClient, endpoints } from "../utils/api";
 
 export const CartContext = createContext();
 
@@ -20,21 +19,17 @@ export const CartProvider = ({ children }) => {
     }
   }, [token]);
 
-  // In fetchCart function, add safety checks
   const fetchCart = async () => {
     if (!token) return;
     
     try {
       setLoading(true);
+      // Debug: Check if endpoint exists
+      console.log("Cart endpoint:", endpoints.cart.get);
       const response = await apiClient.get(endpoints.cart.get);
       console.log("Cart fetched:", response.data);
-      
-      // Ensure cart has items array
-      const cartData = response.data || { items: [] };
-      setCart(cartData);
-      
-      // Safely calculate cart count
-      const count = cartData.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+      setCart(response.data || { items: [] });
+      const count = response.data?.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
       setCartCount(count);
     } catch (error) {
       console.error("Error fetching cart:", error);
@@ -53,9 +48,21 @@ export const CartProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      const response = await apiClient.post(endpoints.cart, { productId, quantity }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      
+      // Debug: Check if endpoint exists
+      console.log("Add to cart endpoint:", endpoints.cart.add);
+      console.log("Product ID:", productId);
+      console.log("Quantity:", quantity);
+      
+      // Make sure endpoints.cart.add is a string
+      const addEndpoint = endpoints.cart.add;
+      if (typeof addEndpoint !== 'string') {
+        console.error("Invalid cart add endpoint:", addEndpoint);
+        alert("Configuration error: Invalid cart endpoint");
+        return false;
+      }
+      
+      const response = await apiClient.post(addEndpoint, { productId, quantity });
       console.log("Add to cart response:", response.data);
       await fetchCart();
       alert("Product added to cart successfully!");
@@ -74,9 +81,9 @@ export const CartProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      const response = await apiClient.delete(` ${endpoints.cart}/${productId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const removeEndpoint = endpoints.cart.remove(productId);
+      console.log("Remove endpoint:", removeEndpoint);
+      const response = await apiClient.delete(removeEndpoint);
       console.log("Remove from cart response:", response.data);
       await fetchCart();
       return true;
@@ -93,9 +100,9 @@ export const CartProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      const response = await apiClient.put(` ${endpoints.cart}/update/${productId}`, { quantity }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const updateEndpoint = endpoints.cart.update(productId);
+      console.log("Update endpoint:", updateEndpoint);
+      const response = await apiClient.put(updateEndpoint, { quantity });
       console.log("Update quantity response:", response.data);
       await fetchCart();
       return true;
@@ -112,9 +119,7 @@ export const CartProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      await apiClient.delete(endpoints.cart.clear, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiClient.delete(endpoints.cart.clear);
       await fetchCart();
       return true;
     } catch (error) {
