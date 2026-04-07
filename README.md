@@ -11,8 +11,8 @@ A full-featured e-commerce platform built with the MERN stack (MongoDB, Express.
 
 ## 🚀 Live Demo
 
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:5000
+**https://skmart-five.vercel.app**:
+
 
 ## 📋 Table of Contents
 
