@@ -1,14 +1,13 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+const path = require("path");
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
 const User = require("../models/user");
 const Order = require("../models/order");
 const Product = require("../models/product");
 const Category = require("../models/category");
-const multer = require("multer");
-const path = require("path");
-
 
 // Configure multer for image upload
 const storage = multer.diskStorage({
@@ -38,23 +37,44 @@ router.get("/products", async (req, res) => {
   }
 });
 
-// Create product
-router.post("/products", async (req, res) => {
+// Create product - WITH FILE UPLOAD
+router.post("/products", upload.single("image"), async (req, res) => {
   try {
-    const product = await Product.create(req.body);
-    res.status(201).json(product);
+    console.log("Creating product with:", req.body);
+    console.log("Uploaded file:", req.file);
+    
+    const { title, description, price, category, stock } = req.body;
+    
+    // Create product with image path
+    const product = await Product.create({
+      title,
+      description,
+      price: Number(price),
+      category,
+      stock: Number(stock),
+      image: req.file ? `/uploads/${req.file.filename}` : "/uploads/default.jpg"
+    });
+    
+    const populatedProduct = await Product.findById(product._id).populate("category", "name");
+    
+    res.status(201).json({
+      success: true,
+      product: populatedProduct
+    });
   } catch (error) {
+    console.error("Create product error:", error);
     res.status(500).json({ message: error.message });
   }
 });
 
-// UPDATE product - ADD THIS ROUTE
-router.put("/products/:id", async (req, res) => {
+// UPDATE product - WITH OPTIONAL FILE UPLOAD
+router.put("/products/:id", upload.single("image"), async (req, res) => {
   try {
     console.log("Updating product ID:", req.params.id);
     console.log("Update data:", req.body);
+    console.log("Uploaded file:", req.file);
     
-    const { title, description, price, category, stock, image } = req.body;
+    const { title, description, price, category, stock } = req.body;
     
     const updateData = {
       title,
@@ -64,9 +84,9 @@ router.put("/products/:id", async (req, res) => {
       stock: Number(stock),
     };
     
-    // Only add image if provided
-    if (image) {
-      updateData.image = image;
+    // Only add image if a new file was uploaded
+    if (req.file) {
+      updateData.image = `/uploads/${req.file.filename}`;
     }
     
     const product = await Product.findByIdAndUpdate(
@@ -80,7 +100,10 @@ router.put("/products/:id", async (req, res) => {
     }
     
     console.log("Product updated successfully:", product);
-    res.json(product);
+    res.json({
+      success: true,
+      product: product
+    });
   } catch (error) {
     console.error("Error updating product:", error);
     res.status(500).json({ message: error.message });

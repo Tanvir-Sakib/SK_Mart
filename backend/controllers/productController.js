@@ -1,59 +1,46 @@
 const Product = require("../models/product");
 const Category = require("../models/category");
-const multer = require("multer");
-const path = require("path");
 
-// Configure multer for image upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({ storage: storage });
-
-// Admin-only: create a product
 exports.createProduct = async (req, res) => {
+  console.log("=== CREATE PRODUCT ===");
+  console.log("Content-Type:", req.headers['content-type']);
+  console.log("Body:", req.body);
+  console.log("File:", req.file);
+  
   try {
-    console.log("=== CREATE PRODUCT DEBUG ===");
-    console.log("Content-Type:", req.headers["content-type"]);
-    console.log("Body:", req.body);
-    console.log("File:", req.file);
+    let title, description, price, category, stock, image;
     
-    // Extract fields - they come as strings in FormData
-    const title = req.body.title;
-    const description = req.body.description;
-    const price = parseFloat(req.body.price);
-    const category = req.body.category;
-    const stock = parseInt(req.body.stock);
-    const image = req.file ? `/uploads/${req.file.filename}` : req.body.image;
-    
-    console.log("Parsed data:", { title, description, price, category, stock, image });
-    
-    // Validate required fields
-    const missingFields = [];
-    if (!title) missingFields.push("title");
-    if (!description) missingFields.push("description");
-    if (isNaN(price)) missingFields.push("price");
-    if (!category) missingFields.push("category");
-    if (isNaN(stock)) missingFields.push("stock");
-    
-    if (missingFields.length > 0) {
-      return res.status(400).json({ 
-        message: `Missing required fields: ${missingFields.join(", ")}`,
-        missing: missingFields
-      });
+    // Handle both JSON and FormData
+    if (req.headers['content-type']?.includes('multipart/form-data')) {
+      // FormData with file
+      title = req.body.title;
+      description = req.body.description;
+      price = Number(req.body.price);
+      category = req.body.category;
+      stock = Number(req.body.stock);
+      image = req.file ? `/uploads/${req.file.filename}` : null;
+    } else {
+      // JSON
+      title = req.body.title;
+      description = req.body.description;
+      price = Number(req.body.price);
+      category = req.body.category;
+      stock = Number(req.body.stock);
+      image = req.body.image;
     }
     
-    // Check if category exists
-    const categoryExists = await Category.findById(category);
-    if (!categoryExists) {
-      return res.status(404).json({ message: "Category not found" });
-    }
+    console.log("Parsed:", { title, description, price, category, stock, image });
+    
+    // Simple validation
+    if (!title) return res.status(400).json({ error: "Title required" });
+    if (!description) return res.status(400).json({ error: "Description required" });
+    if (!price) return res.status(400).json({ error: "Price required" });
+    if (!category) return res.status(400).json({ error: "Category required" });
+    if (stock === undefined) return res.status(400).json({ error: "Stock required" });
+    
+    // Check category
+    const catExists = await Category.findById(category);
+    if (!catExists) return res.status(404).json({ error: "Category not found" });
     
     // Create product
     const product = await Product.create({
@@ -65,69 +52,57 @@ exports.createProduct = async (req, res) => {
       image: image || "/uploads/default.jpg"
     });
     
-    const populatedProduct = await Product.findById(product._id).populate("category", "name");
+    const populated = await Product.findById(product._id).populate("category", "name");
     
-    console.log("Product created:", populatedProduct);
-    
-    res.status(201).json({
-      success: true,
-      product: populatedProduct
-    });
+    res.status(201).json({ success: true, product: populated });
     
   } catch (err) {
-    console.error("CREATE PRODUCT ERROR:", err);
-    res.status(500).json({ 
-      message: err.message,
-      stack: err.stack 
-    });
+    console.error("Error:", err);
+    res.status(500).json({ error: err.message });
   }
 };
 
-// Admin-only: update product
+exports.getProducts = async (req, res) => {
+  try {
+    const products = await Product.find().populate("category", "name").sort({ createdAt: -1 });
+    res.json({ products, total: products.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getSingleProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id).populate("category", "name");
+    if (!product) return res.status(404).json({ error: "Not found" });
+    res.json(product);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.updateProduct = async (req, res) => {
   try {
-    const { title, description, price, category, stock, image } = req.body;
+    const updates = {};
+    if (req.body.title) updates.title = req.body.title;
+    if (req.body.description) updates.description = req.body.description;
+    if (req.body.price) updates.price = Number(req.body.price);
+    if (req.body.category) updates.category = req.body.category;
+    if (req.body.stock !== undefined) updates.stock = Number(req.body.stock);
+    if (req.file) updates.image = `/uploads/${req.file.filename}`;
     
-    // Check if category exists if being updated
-    if (category) {
-      const categoryExists = await Category.findById(category);
-      if (!categoryExists) {
-        return res.status(404).json({ message: "Category not found" });
-      }
-    }
-
-    const updateData = {
-      title,
-      description,
-      price: Number(price),
-      category,
-      stock: Number(stock),
-    };
-
-    // Only update image if provided
-    if (image) {
-      updateData.image = image;
-    }
-    if (req.file) {
-      updateData.image = `/uploads/${req.file.filename}`;
-    }
-
-    const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true, runValidators: true }
-    ).populate("category", "name");
-
-    if (!updatedProduct) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    res.json({
-      success: true,
-      product: updatedProduct
-    });
+    const product = await Product.findByIdAndUpdate(req.params.id, updates, { new: true }).populate("category", "name");
+    res.json({ success: true, product });
   } catch (err) {
-    console.error("UPDATE PRODUCT ERROR:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.deleteProduct = async (req, res) => {
+  try {
+    await Product.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
