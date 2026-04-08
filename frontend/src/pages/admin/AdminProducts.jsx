@@ -204,6 +204,7 @@ const AdminProducts = () => {
                   <img 
                     src={getImageUrl(product.image)}
                     alt={product.title}
+                    style={{ width: 50, height: 50, objectFit: "cover" }}
                   />
                 </td>
                 <td>{product.title}</td>
