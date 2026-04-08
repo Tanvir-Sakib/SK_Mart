@@ -8,6 +8,7 @@ const User = require("../models/user");
 const Order = require("../models/order");
 const Product = require("../models/product");
 const Category = require("../models/category");
+const { upload } = require("../config/cloudinary");
 
 // Configure multer for image upload
 const storage = multer.diskStorage({
@@ -37,30 +38,22 @@ router.get("/products", async (req, res) => {
   }
 });
 
-// Create product - WITH FILE UPLOAD
+// Create product with image upload
 router.post("/products", upload.single("image"), async (req, res) => {
   try {
-    console.log("Creating product with:", req.body);
-    console.log("Uploaded file:", req.file);
-    
     const { title, description, price, category, stock } = req.body;
     
-    // Create product with image path
     const product = await Product.create({
       title,
       description,
       price: Number(price),
       category,
       stock: Number(stock),
-      image: req.file ? `/uploads/${req.file.filename}` : "/uploads/default.jpg"
+      image: req.file ? req.file.path : "/uploads/default.jpg" // Cloudinary returns URL
     });
     
     const populatedProduct = await Product.findById(product._id).populate("category", "name");
-    
-    res.status(201).json({
-      success: true,
-      product: populatedProduct
-    });
+    res.status(201).json({ success: true, product: populatedProduct });
   } catch (error) {
     console.error("Create product error:", error);
     res.status(500).json({ message: error.message });
