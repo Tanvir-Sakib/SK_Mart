@@ -23,17 +23,13 @@ const userSchema = new mongoose.Schema({
 
 // Hash password before saving - FIXED
 userSchema.pre("save", function(next) {
-  // 'this' refers to the user document being saved
   if (!this.isModified("password")) {
     return next();
   }
-  try {
-    const salt = bcrypt.genSaltSync(10);
-    this.password = bcrypt.hashSync(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
+
+  const salt = bcrypt.genSaltSync(10);
+  this.password = bcrypt.hashSync(this.password, salt);
+  next();
 });
 
 // Compare password method

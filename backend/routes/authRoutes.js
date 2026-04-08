@@ -114,33 +114,27 @@ router.get("/addresses", authMiddleware, async (req, res) => {
 
 // Add new address
 router.post("/addresses", authMiddleware, async (req, res) => {
+  console.log("=== STEP 1: Route hit ===");
+  
   try {
-    console.log("=== ADD ADDRESS ===");
+    console.log("=== STEP 2: Inside try block ===");
     console.log("User ID:", req.user.id);
-    console.log("Body:", req.body);
     
     const { fullName, address, city, postalCode, phone, email, isDefault } = req.body;
-    
-    // Simple validation
-    if (!fullName || !address || !city || !phone || !email) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
+    console.log("=== STEP 3: Body parsed ===");
     
     const user = await User.findById(req.user.id);
+    console.log("=== STEP 4: User found:", !!user);
+    
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
     
+    console.log("=== STEP 5: About to save address ===");
+    
     // Initialize addresses if needed
     if (!user.addresses) {
       user.addresses = [];
-    }
-    
-    // If default, unset others
-    if (isDefault) {
-      user.addresses.forEach(addr => {
-        addr.isDefault = false;
-      });
     }
     
     // Add new address
@@ -154,17 +148,23 @@ router.post("/addresses", authMiddleware, async (req, res) => {
       isDefault: isDefault || false
     });
     
+    console.log("=== STEP 6: About to save user ===");
+    
     await user.save();
     
-    return res.status(201).json({ 
-      success: true,
+    console.log("=== STEP 7: User saved successfully ===");
+    
+    res.status(201).json({ 
+      success: true, 
       message: "Address added successfully", 
       addresses: user.addresses 
     });
     
   } catch (error) {
-    console.error("Add address error:", error);
-    return res.status(500).json({ message: error.message });
+    console.error("=== ERROR ===");
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    res.status(500).json({ message: error.message });
   }
 });
 

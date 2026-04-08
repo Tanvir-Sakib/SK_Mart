@@ -242,7 +242,6 @@ const AdminShippingSettings = () => {
               <tr>
                 <td>Less than ৳{settings.freeShippingThreshold}</td>
                 <td>৳ {settings.cityRates.find(c => c.city === "Dhaka")?.fee || settings.defaultFee}</td>
-                <td>৳ {settings.cityRates.find(c => c.city === "Chattogram")?.fee || settings.defaultFee}</td>
                 <td>৳ {settings.defaultFee}</td>
               </tr>
               <tr className="highlight">
