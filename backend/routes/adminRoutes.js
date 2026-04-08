@@ -1,7 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
-const path = require("path");
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
 const User = require("../models/user");
@@ -10,18 +8,8 @@ const Product = require("../models/product");
 const Category = require("../models/category");
 const ShippingSettings = require("../models/shippingSettings");
 
-// Configure multer for image upload - ONLY ONE OF THESE
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({ storage: storage }); // ONLY ONE upload declaration
+// ✅ Use Cloudinary instead of local multer
+const { upload } = require("../config/cloudinary");
 
 // Apply middlewares
 router.use(authMiddleware);
@@ -37,13 +25,20 @@ router.get("/products", async (req, res) => {
   }
 });
 
-// Create product - WITH FILE UPLOAD
+// ✅ Create product - WITH CLOUDINARY UPLOAD
 router.post("/products", upload.single("image"), async (req, res) => {
   try {
     console.log("Creating product with:", req.body);
-    console.log("Uploaded file:", req.file);
+    console.log("Cloudinary file:", req.file);
     
     const { title, description, price, category, stock } = req.body;
+    
+    // req.file.path contains the full Cloudinary URL
+    const imageUrl = req.file ? req.file.path : null;
+    
+    if (!imageUrl) {
+      return res.status(400).json({ message: "Image is required" });
+    }
     
     const product = await Product.create({
       title,
@@ -51,7 +46,7 @@ router.post("/products", upload.single("image"), async (req, res) => {
       price: Number(price),
       category,
       stock: Number(stock),
-      image: req.file ? `/uploads/${req.file.filename}` : "/uploads/default.jpg"
+      image: imageUrl  // This is the full Cloudinary URL
     });
     
     const populatedProduct = await Product.findById(product._id).populate("category", "name");
@@ -62,7 +57,7 @@ router.post("/products", upload.single("image"), async (req, res) => {
   }
 });
 
-// UPDATE product
+// ✅ UPDATE product - WITH OPTIONAL CLOUDINARY UPLOAD
 router.put("/products/:id", upload.single("image"), async (req, res) => {
   try {
     const { title, description, price, category, stock } = req.body;
@@ -75,8 +70,9 @@ router.put("/products/:id", upload.single("image"), async (req, res) => {
       stock: Number(stock),
     };
     
+    // If new image uploaded, use Cloudinary URL
     if (req.file) {
-      updateData.image = `/uploads/${req.file.filename}`;
+      updateData.image = req.file.path;  // Full Cloudinary URL
     }
     
     const product = await Product.findByIdAndUpdate(
@@ -232,8 +228,6 @@ router.get("/stats", async (req, res) => {
 });
 
 // ========== SHIPPING SETTINGS MANAGEMENT ==========
-
-// Get shipping settings
 router.get("/shipping-settings", async (req, res) => {
   try {
     const settings = await ShippingSettings.getInstance();
@@ -243,7 +237,6 @@ router.get("/shipping-settings", async (req, res) => {
   }
 });
 
-// Update shipping settings
 router.put("/shipping-settings", async (req, res) => {
   try {
     const { freeShippingThreshold, cityRates, defaultFee, freeShippingEnabled } = req.body;
