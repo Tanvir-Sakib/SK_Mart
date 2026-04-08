@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ProductCard from "../components/ProductCard";
 import CategoryNav from "../components/CategoryNav";
 import { apiClient, endpoints } from "../utils/api";
