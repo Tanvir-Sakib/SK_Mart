@@ -10,6 +10,7 @@ const Profile = () => {
   const [addresses, setAddresses] = useState([]);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
+  
   const [addressForm, setAddressForm] = useState({
     fullName: "",
     address: "",
@@ -19,6 +20,7 @@ const Profile = () => {
     email: "",
     isDefault: false,
   });
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",

@@ -249,12 +249,4 @@ router.put("/addresses/:addressId/default", authMiddleware, async (req, res) => 
   }
 });
 
-router.options('/addresses', (req, res) => {
-  res.header('Access-Control-Allow-Origin', 'https://skmart-five.vercel.app');
-  res.header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.sendStatus(200);
-});
-
 module.exports = router;
