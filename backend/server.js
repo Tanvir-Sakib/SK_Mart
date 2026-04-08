@@ -8,6 +8,7 @@ require("dotenv").config();
 
 const app = express();
 
+// CORS configuration
 app.use(cors({
   origin: [
     "http://localhost:5173",
@@ -37,13 +38,13 @@ const connectDB = async () => {
 
 connectDB();
 
-// Create uploads directory if it doesn't exist
+// Create uploads directory
 if (!fs.existsSync("uploads")) {
   fs.mkdirSync("uploads");
   console.log("Uploads folder created");
 }
 
-// Configure multer for image upload
+// Multer configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
@@ -109,4 +110,5 @@ app.get("/health", (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📍 Listening on 0.0.0.0:${PORT}`);
 });
