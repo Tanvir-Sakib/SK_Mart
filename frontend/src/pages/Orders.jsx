@@ -9,6 +9,7 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [cancellingId, setCancellingId] = useState(null); // Add this
 
   useEffect(() => {
     fetchOrders();
@@ -33,6 +34,30 @@ const Orders = () => {
       setError(error.response?.data?.message || "Failed to fetch orders");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Add delete/cancel order function
+  const handleCancelOrder = async (orderId) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel this order? This action cannot be undone."
+    );
+    
+    if (!confirmed) return;
+    
+    setCancellingId(orderId);
+    
+    try {
+      await apiClient.delete(`${endpoints.orders.myOrders}/${orderId}`);
+      alert("Order cancelled successfully!");
+      
+      // Remove the cancelled order from state or refresh
+      setOrders(orders.filter(order => order._id !== orderId));
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      alert(error.response?.data?.message || "Failed to cancel order");
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -133,9 +158,20 @@ const Orders = () => {
                 <div className="order-total">
                   <strong>Total Amount:</strong> ৳ {order.totalAmount || order.total || 0}
                 </div>
-                <button className="invoice-btn" onClick={() => handleDownloadInvoice(order)}>
-                  📄 Download Invoice
-                </button>
+                <div className="order-actions">
+                  <button className="invoice-btn" onClick={() => handleDownloadInvoice(order)}>
+                    📄 Download Invoice
+                  </button>
+                  {order.status === "pending" && (
+                    <button 
+                      className="cancel-order-btn"
+                      onClick={() => handleCancelOrder(order._id)}
+                      disabled={cancellingId === order._id}
+                    >
+                      {cancellingId === order._id ? "Cancelling..." : "❌ Cancel Order"}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
