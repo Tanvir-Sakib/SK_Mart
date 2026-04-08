@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import { API_URL } from "../../utils/api";
+import { apiClient, endpoints, getImageUrl, API_URL } from "../../utils/api";
 import axios from "axios";
 import "./Admin.css";
 
