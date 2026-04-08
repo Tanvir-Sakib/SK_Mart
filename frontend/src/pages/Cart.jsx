@@ -1,11 +1,10 @@
-import { useContext } from "react";
+import React,{ useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import { getImageUrl } from "../utils/api";
 import { FALLBACK_IMAGE } from "../utils/constants";
 
-const [imgError, setImgError] = useState(false);
 
 const Cart = () => {
   const { 

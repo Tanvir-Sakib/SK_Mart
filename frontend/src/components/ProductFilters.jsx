@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React,{ useState, useEffect } from "react";
 import axios from "axios";
 import { apiClient, endpoints, getImageUrl } from "../utils/api";
 
@@ -16,7 +16,7 @@ const ProductFilters = ({ onFilterChange, onSortChange, onSearchChange }) => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/categories");
+      const response = await apiClient.get(endpoints.categories.getAll);
       setCategories(response.data);
     } catch (error) {
       console.error("Error fetching categories:", error);

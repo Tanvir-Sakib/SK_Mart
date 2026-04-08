@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React,{ useState, useEffect } from "react";
 import { apiClient, endpoints } from "../utils/api";
 
 const CategoryNav = ({ onCategorySelect, selectedCategory, onSearch, onFilterReset, searchTerm: externalSearchTerm }) => {

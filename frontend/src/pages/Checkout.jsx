@@ -1,17 +1,9 @@
-import { useContext, useState } from "react";
+import React,{ useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import { apiClient, endpoints, getImageUrl } from "../utils/api";
-
-const [imgError, setImgError] = useState(false);
-
-// In the img tag
-<img 
-  src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
-  alt={product.title}
-  onError={() => setImgError(true)}
-/>
+import { FALLBACK_IMAGE } from "../utils/constants";
 
 const Checkout = () => {
   const { cart, cartCount, clearCart } = useContext(CartContext);
@@ -19,7 +11,8 @@ const Checkout = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
-
+  const [imgError, setImgError] = useState(false);
+  const [product, setProduct] = useState(null);
   const [shippingDetails, setShippingDetails] = useState({
     fullName: "",
     address: "",

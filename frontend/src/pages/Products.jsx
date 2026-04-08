@@ -4,7 +4,7 @@ import CategoryNav from "../components/CategoryNav";
 import { apiClient, endpoints } from "../utils/api";
 
 const Products = () => {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState([]);;
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
