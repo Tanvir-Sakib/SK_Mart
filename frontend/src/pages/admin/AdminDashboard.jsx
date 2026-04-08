@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import { apiClient, endpoints, getImageUrl } from "../../utils/api";
+import { apiClient, endpoints } from "../../utils/api";
 import { Link } from "react-router-dom";
-import {formatCurrency} from "../../utils/currency";
-
 import "./Admin.css";
 
 const AdminDashboard = () => {
@@ -86,7 +84,7 @@ const AdminDashboard = () => {
         <Link to="/admin/categories" className="admin-btn">Manage Categories</Link>
         <Link to="/admin/orders" className="admin-btn">Manage Orders</Link>
         <Link to="/admin/users" className="admin-btn">Manage Users</Link>
-        <Link to="/admin/shipping" className="admin-btn">🚚 Shipping Settings</Link>
+        <Link to="/admin/shipping" className="admin-btn">Shipping Settings</Link>
       </div>
 
       <div className="recent-orders">
@@ -106,7 +104,7 @@ const AdminDashboard = () => {
               <tr key={order._id}>
                 <td>#{order._id.slice(-8)}</td>
                 <td>{order.user?.name}</td>
-                <td>{formatCurrency(order.totalAmount)}</td>
+                <td>৳ {order.totalAmount}</td>
                 <td><span className={`status-badge ${order.status}`}>{order.status}</span></td>
                 <td>{new Date(order.createdAt).toLocaleDateString()}</td>
               </tr>
