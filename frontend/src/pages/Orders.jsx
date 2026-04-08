@@ -189,7 +189,7 @@ const Orders = () => {
                     onClick={() => handleDeleteOrder(order._id)}
                     disabled={deletingId === order._id || order.status !== "pending"}
                   >
-                    {deletingId === order._id ? "Deleting..." : "🗑️ Delete Order"}
+                    {deletingId === order._id ? "Cancelling..." : "🗑️ Cancel Order"}
                   </button>
                 </div>
               </div>
