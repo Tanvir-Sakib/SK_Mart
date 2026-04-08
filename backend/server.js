@@ -11,11 +11,10 @@ const app = express();
 // CORS configuration
 app.use(cors({
   origin: [
-    "http://localhost:5000",
-    "http://localhost:10000",
     "http://localhost:5173",
-    "https://skmart-y04r.onrender.com",
+    "http://localhost:5000",
     "https://skmart-five.vercel.app",
+    "https://skmart-y04r.onrender.com"
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -31,6 +30,17 @@ const connectDB = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ MongoDB Connected Successfully");
     console.log(`📊 Using database: ${mongoose.connection.name}`);
+    
+    // ✅ AFTER connection, require models
+    require("./models/category");
+    require("./models/product");
+    require("./models/user");
+    require("./models/cart");
+    require("./models/order");
+    
+    // ✅ NOW check registered models
+    console.log("Registered models:", mongoose.modelNames());
+    
   } catch (error) {
     console.error("❌ MongoDB Connection Error:", error.message);
     process.exit(1);
@@ -71,7 +81,7 @@ const upload = multer({
   },
 });
 
-// Routes
+// Routes - IMPORT: Require them AFTER models are registered
 const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
