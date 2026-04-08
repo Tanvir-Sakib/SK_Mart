@@ -1,10 +1,10 @@
-import React,{ useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import axios from "axios";
+import { apiClient, endpoints, getImageUrl } from "../../utils/api";
 import { Link } from "react-router-dom";
+import {formatCurrency} from "../../utils/helpers";
+
 import "./Admin.css";
-import { formatPrice } from "../../utils/currency";
-import { apiClient, endpoints, getImageUrl } from '../../utils/api';
 
 const AdminDashboard = () => {
   const { token } = useContext(AuthContext);
@@ -24,9 +24,7 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await apiClient.get(endpoints.admin.stats, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await apiClient.get(endpoints.admin.stats);
       setStats(response.data);
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -86,9 +84,9 @@ const AdminDashboard = () => {
       <div className="admin-actions">
         <Link to="/admin/products" className="admin-btn">Manage Products</Link>
         <Link to="/admin/categories" className="admin-btn">Manage Categories</Link>
-        <Link to="/admin/users" className="admin-btn">Manage Users</Link>
         <Link to="/admin/orders" className="admin-btn">Manage Orders</Link>
-        <Link to="/admin/shipping" className="admin-btn">Shipping Settings</Link>
+        <Link to="/admin/users" className="admin-btn">Manage Users</Link>
+        <Link to="/admin/shipping" className="admin-btn">🚚 Shipping Settings</Link>
       </div>
 
       <div className="recent-orders">
@@ -108,7 +106,7 @@ const AdminDashboard = () => {
               <tr key={order._id}>
                 <td>#{order._id.slice(-8)}</td>
                 <td>{order.user?.name}</td>
-                <td> {formatPrice(order.totalAmount)}</td>
+                <td>{formatCurrency(order.totalAmount)}</td>
                 <td><span className={`status-badge ${order.status}`}>{order.status}</span></td>
                 <td>{new Date(order.createdAt).toLocaleDateString()}</td>
               </tr>
