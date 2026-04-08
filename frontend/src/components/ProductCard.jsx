@@ -1,16 +1,14 @@
-import React,{ useContext, useState } from "react";
+import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { getImageUrl } from "../utils/api";
-import { FALLBACK_IMAGE } from "../utils/constants";
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
   const { token } = useContext(AuthContext);
   const { addToCart, loading } = useContext(CartContext);
   const [adding, setAdding] = useState(false);
-  const [imgError, setImgError] = useState(false);
 
   const handleProductClick = () => {
     navigate(`/product/${product._id}`);
@@ -30,7 +28,7 @@ const ProductCard = ({ product }) => {
     setAdding(false);
   };
 
-  const imageUrl = imgError ? FALLBACK_IMAGE : getImageUrl(product.image);
+  const imageUrl = getImageUrl(product.image);
 
   return (
     <div className="product-card" onClick={handleProductClick}>
@@ -38,7 +36,6 @@ const ProductCard = ({ product }) => {
         <img 
           src={imageUrl}
           alt={product.title}
-          onError={() => setImgError(true)}
         />
       </div>
       <h3>{product.title}</h3>

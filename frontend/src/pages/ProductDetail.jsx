@@ -1,9 +1,8 @@
-import React,{ useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { apiClient, endpoints, getImageUrl } from "../utils/api";
-import { FALLBACK_IMAGE } from "../utils/constants";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -17,7 +16,6 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
-  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -62,8 +60,6 @@ const ProductDetail = () => {
     }
   };
 
-  const imageUrl = imgError ? FALLBACK_IMAGE : getImageUrl(product?.image);
-
   if (loading) return <div className="loading">Loading product...</div>;
   if (error) return <div className="error">{error}</div>;
   if (!product) return <div className="error">Product not found</div>;
@@ -77,9 +73,8 @@ const ProductDetail = () => {
       <div className="product-detail">
         <div className="product-image">
           <img 
-            src={imageUrl}
+            src={getImageUrl(product.image)} 
             alt={product.title}
-            onError={() => setImgError(true)}
           />
         </div>
 

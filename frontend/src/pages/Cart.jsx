@@ -1,32 +1,12 @@
-import React,{ useContext } from "react";
+import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
-import { AuthContext } from "../context/AuthContext";
 import { getImageUrl } from "../utils/api";
-import { FALLBACK_IMAGE } from "../utils/constants";
-
 
 const Cart = () => {
-  const { 
-    cart, 
-    cartCount, 
-    removeFromCart, 
-    incrementQuantity,
-    decrementQuantity,
-    loading 
-  } = useContext(CartContext);
-  const { token } = useContext(AuthContext);
+  const { cart, cartCount, removeFromCart, incrementQuantity, decrementQuantity, loading } = useContext(CartContext);
   const navigate = useNavigate();
-  const [imgErrors, setImgErrors] = useState({});
 
-  const handleImageError = (productId) => {
-    setImgErrors(prev => ({ ...prev, [productId]: true }));
-  };
-
-  const getProductImageUrl = (product) => {
-    if (imgErrors[product?._id]) return FALLBACK_IMAGE;
-    return getImageUrl(product?.image);
-  };
   const calculateTotal = () => {
     if (!cart.items) return 0;
     return cart.items.reduce((total, item) => {
@@ -35,30 +15,15 @@ const Cart = () => {
   };
 
   const handleIncrement = async (productId) => {
-    console.log("Increment clicked for:", productId);
-    if (incrementQuantity) {
-      await incrementQuantity(productId);
-    } else {
-      console.error("incrementQuantity is undefined");
-    }
+    await incrementQuantity(productId);
   };
 
   const handleDecrement = async (productId) => {
-    console.log("Decrement clicked for:", productId);
-    if (decrementQuantity) {
-      await decrementQuantity(productId);
-    } else {
-      console.error("decrementQuantity is undefined");
-    }
+    await decrementQuantity(productId);
   };
 
   const handleRemove = async (productId) => {
-    console.log("Remove clicked for:", productId);
-    if (removeFromCart) {
-      await removeFromCart(productId);
-    } else {
-      console.error("removeFromCart is undefined");
-    }
+    await removeFromCart(productId);
   };
 
   const handleCheckout = () => {
@@ -98,10 +63,9 @@ const Cart = () => {
           <div key={item.product?._id} className="cart-item">
             <div className="cart-item-product">
               <img 
-                  src={getProductImageUrl(item.product)} 
-                  alt={item.product?.title}
-                  onError={() => handleImageError(item.product?._id)}
-                />
+                src={getImageUrl(item.product?.image)} 
+                alt={item.product?.title}
+              />
               <div>
                 <h4>{item.product?.title}</h4>
                 <p className="category">{item.product?.category?.name}</p>
@@ -113,29 +77,16 @@ const Cart = () => {
             </div>
             
             <div className="cart-item-quantity">
-              <button 
-                onClick={() => handleDecrement(item.product?._id)}
-                disabled={item.quantity <= 1}
-              >
-                -
-              </button>
+              <button onClick={() => handleDecrement(item.product?._id)} disabled={item.quantity <= 1}>-</button>
               <span>{item.quantity}</span>
-              <button 
-                onClick={() => handleIncrement(item.product?._id)}
-                disabled={item.quantity >= item.product?.stock}
-              >
-                +
-              </button>
+              <button onClick={() => handleIncrement(item.product?._id)} disabled={item.quantity >= item.product?.stock}>+</button>
             </div>
             
             <div className="cart-item-total">
               ৳ {(item.product?.price || 0) * (item.quantity || 0)}
             </div>
             
-            <button 
-              className="remove-btn"
-              onClick={() => handleRemove(item.product?._id)}
-            >
+            <button className="remove-btn" onClick={() => handleRemove(item.product?._id)}>
               Remove
             </button>
           </div>
