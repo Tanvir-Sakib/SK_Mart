@@ -16,27 +16,23 @@ const ProductCard = ({ product }) => {
 
   const handleAddToCart = async (e) => {
     e.stopPropagation();
-    
     if (!token) {
       alert("Please login first");
       navigate("/login");
       return;
     }
-    
     setAdding(true);
     await addToCart(product._id, 1);
     setAdding(false);
   };
 
+  // Simple image URL - NO imgError
   const imageUrl = getImageUrl(product.image);
 
   return (
     <div className="product-card" onClick={handleProductClick}>
       <div className="product-image-container">
-        <img 
-          src={imageUrl}
-          alt={product.title}
-        />
+        <img src={imageUrl} alt={product.title} />
       </div>
       <h3>{product.title}</h3>
       <p className="price">৳ {product.price}</p>

@@ -1,120 +1,150 @@
-import React, { useContext } from "react";
-import { useNavigate } from "react-router-dom";
-import { CartContext } from "../context/CartContext";
-import { getImageUrl } from "../utils/api";
+import React, { useState, useEffect, useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
+import { apiClient, endpoints, getImageUrl } from "../utils/api";
+import Invoice from "../components/Invoice";
 
-const Cart = () => {
-  const { cart, cartCount, removeFromCart, incrementQuantity, decrementQuantity, loading } = useContext(CartContext);
-  const navigate = useNavigate();
+const Orders = () => {
+  const { token } = useContext(AuthContext);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
-  const calculateTotal = () => {
-    if (!cart.items) return 0;
-    return cart.items.reduce((total, item) => {
-      return total + (item.product?.price || 0) * (item.quantity || 0);
-    }, 0);
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await apiClient.get(endpoints.orders.myOrders);
+      
+      let ordersData = [];
+      if (Array.isArray(response.data)) {
+        ordersData = response.data;
+      } else if (response.data && Array.isArray(response.data.orders)) {
+        ordersData = response.data.orders;
+      }
+      
+      setOrders(ordersData);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setError(error.response?.data?.message || "Failed to fetch orders");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleIncrement = async (productId) => {
-    await incrementQuantity(productId);
+  const getStatusColor = (status) => {
+    switch(status) {
+      case "pending": return "status-pending";
+      case "processing": return "status-processing";
+      case "shipped": return "status-shipped";
+      case "delivered": return "status-delivered";
+      case "cancelled": return "status-cancelled";
+      default: return "";
+    }
   };
 
-  const handleDecrement = async (productId) => {
-    await decrementQuantity(productId);
+  const getStatusIcon = (status) => {
+    switch(status) {
+      case "pending": return "⏳";
+      case "processing": return "🔄";
+      case "shipped": return "📦";
+      case "delivered": return "✅";
+      case "cancelled": return "❌";
+      default: return "📋";
+    }
   };
 
-  const handleRemove = async (productId) => {
-    await removeFromCart(productId);
+  const handleDownloadInvoice = (order) => {
+    setSelectedOrder(order);
   };
 
-  const handleCheckout = () => {
-    navigate("/checkout");
-  };
-
-  if (loading) {
-    return <div className="loading">Loading cart...</div>;
-  }
-
-  if (!cart.items || cart.items.length === 0) {
-    return (
-      <div className="cart-empty">
-        <h2>Your cart is empty</h2>
-        <p>Add some products to your cart to see them here.</p>
-        <button onClick={() => navigate("/")} className="continue-shopping-btn">
-          Continue Shopping
-        </button>
-      </div>
-    );
-  }
+  if (loading) return <div className="loading">Loading orders...</div>;
+  if (error) return <div className="error">{error}</div>;
 
   return (
-    <div className="cart-container">
-      <h1>Shopping Cart ({cartCount} items)</h1>
+    <div className="orders-container">
+      <h1>My Orders</h1>
       
-      <div className="cart-items">
-        <div className="cart-header">
-          <span>Product</span>
-          <span>Price</span>
-          <span>Quantity</span>
-          <span>Total</span>
-          <span></span>
+      {!orders || orders.length === 0 ? (
+        <div className="no-orders">
+          <div className="no-orders-icon">📦</div>
+          <h2>No Orders Yet</h2>
+          <p>You haven't placed any orders yet.</p>
+          <button onClick={() => window.location.href = "/"} className="shop-now-btn">
+            Start Shopping
+          </button>
         </div>
-        
-        {cart.items.map((item) => (
-          <div key={item.product?._id} className="cart-item">
-            <div className="cart-item-product">
-              <img 
-                src={getImageUrl(item.product?.image)} 
-                alt={item.product?.title}
-              />
-              <div>
-                <h4>{item.product?.title}</h4>
-                <p className="category">{item.product?.category?.name}</p>
+      ) : (
+        <div className="orders-list">
+          {orders.map((order) => (
+            <div key={order._id} className="order-card">
+              <div className="order-header">
+                <div className="order-info">
+                  <span className="order-id">Order #{order._id?.slice(-8) || "N/A"}</span>
+                  <span className={`order-status ${getStatusColor(order.status)}`}>
+                    {getStatusIcon(order.status)} {order.status?.toUpperCase() || "PENDING"}
+                  </span>
+                </div>
+                <div className="order-date">
+                  📅 {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "N/A"}
+                </div>
+              </div>
+              
+              {order.shippingAddress && (
+                <div className="order-shipping-address">
+                  <h3>📮 Shipping Address</h3>
+                  <div className="address-details">
+                    <p><strong>{order.shippingAddress.fullName || "N/A"}</strong></p>
+                    <p>{order.shippingAddress.address || "N/A"}</p>
+                    <p>{order.shippingAddress.city || "N/A"}, {order.shippingAddress.postalCode || ""}</p>
+                    <p>📞 {order.shippingAddress.phone || "N/A"}</p>
+                    <p>📧 {order.shippingAddress.email || "N/A"}</p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="order-items">
+                <h3>🛍️ Items</h3>
+                {order.items && order.items.length > 0 ? (
+                  order.items.map((item, index) => (
+                    <div key={item.product?._id || index} className="order-item">
+                      <img src={getImageUrl(item.product?.image)} alt={item.product?.title || "Product"} />
+                      <div className="order-item-details">
+                        <h4>{item.product?.title || "Unknown Product"}</h4>
+                        <p>Quantity: {item.quantity || 0}</p>
+                        <p>Price: ৳ {item.price || 0}</p>
+                      </div>
+                      <div className="order-item-total">৳ {(item.price || 0) * (item.quantity || 0)}</div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="no-items">No items found for this order</p>
+                )}
+              </div>
+              
+              <div className="order-footer">
+                <div className="order-payment">
+                  <strong>Payment Method:</strong> {order.paymentMethod || "Cash on Delivery"}
+                </div>
+                <div className="order-total">
+                  <strong>Total Amount:</strong> ৳ {order.totalAmount || order.total || 0}
+                </div>
+                <button className="invoice-btn" onClick={() => handleDownloadInvoice(order)}>
+                  📄 Download Invoice
+                </button>
               </div>
             </div>
-            
-            <div className="cart-item-price">
-              ৳ {item.product?.price}
-            </div>
-            
-            <div className="cart-item-quantity">
-              <button onClick={() => handleDecrement(item.product?._id)} disabled={item.quantity <= 1}>-</button>
-              <span>{item.quantity}</span>
-              <button onClick={() => handleIncrement(item.product?._id)} disabled={item.quantity >= item.product?.stock}>+</button>
-            </div>
-            
-            <div className="cart-item-total">
-              ৳ {(item.product?.price || 0) * (item.quantity || 0)}
-            </div>
-            
-            <button className="remove-btn" onClick={() => handleRemove(item.product?._id)}>
-              Remove
-            </button>
-          </div>
-        ))}
-      </div>
-      
-      <div className="cart-summary">
-        <div className="summary-details">
-          <h3>Order Summary</h3>
-          <div className="summary-row">
-            <span>Subtotal:</span>
-            <span>৳ {calculateTotal()}</span>
-          </div>
-          <div className="summary-row">
-            <span>Shipping:</span>
-            <span>Free</span>
-          </div>
-          <div className="summary-row total">
-            <span>Total:</span>
-            <span>৳ {calculateTotal()}</span>
-          </div>
+          ))}
         </div>
-        <button className="checkout-btn" onClick={handleCheckout}>
-          Proceed to Checkout
-        </button>
-      </div>
+      )}
+
+      {selectedOrder && <Invoice order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
     </div>
   );
 };
 
-export default Cart;
+export default Orders;

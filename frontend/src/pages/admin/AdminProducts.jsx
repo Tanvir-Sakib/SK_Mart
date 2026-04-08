@@ -202,9 +202,8 @@ const AdminProducts = () => {
               <tr key={product._id}>
                 <td>
                   <img 
-                    src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
+                    src={getImageUrl(product.image)}
                     alt={product.title}
-                    onError={() => setImgError(true)}
                   />
                 </td>
                 <td>{product.title}</td>
