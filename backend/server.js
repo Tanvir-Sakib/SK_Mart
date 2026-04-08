@@ -8,28 +8,16 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ COMPLETE CORS CONFIGURATION
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5000",
-  "https://skmart-five.vercel.app",
-  "https://skmart-y04r.onrender.com"
-];
-
 app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log("Blocked origin:", origin);
-      callback(null, true);
-    }
-  },
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:5000",
+    "https://skmart-five.vercel.app",
+    "https://skmart-y04r.onrender.com"
+  ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-  exposedHeaders: ['Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 
 app.use(express.json());
@@ -118,7 +106,6 @@ app.get("/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date() });
 });
 
-// ✅ IMPORTANT: Make sure the server LISTENS (not just exports)
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
