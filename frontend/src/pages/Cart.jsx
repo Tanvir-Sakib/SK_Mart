@@ -7,12 +7,6 @@ import { getImageUrl } from "../utils/api";
 
 const [imgError, setImgError] = useState(false);
 
-// In the img tag
-<img 
-  src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
-  alt={product.title}
-  onError={() => setImgError(true)}
-/>
 const Cart = () => {
   const { 
     cart, 
@@ -95,11 +89,11 @@ const Cart = () => {
         {cart.items.map((item) => (
           <div key={item.product?._id} className="cart-item">
             <div className="cart-item-product">
-              <img 
-                src={getImageUrl(item.product?.image)} 
-                alt={item.product?.title}
-                onError={(e) => e.target.src = "https://placehold.co/80x80?text=No+Image"}
-              />
+                <img 
+                  src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
+                  alt={product.title}
+                  onError={() => setImgError(true)}
+                />
               <div>
                 <h4>{item.product?.title}</h4>
                 <p className="category">{item.product?.category?.name}</p>

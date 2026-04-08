@@ -161,9 +161,9 @@ const Orders = () => {
                   order.items.map((item, index) => (
                     <div key={item.product?._id || index} className="order-item">
                       <img 
-                        src={getImageUrl(item.product?.image)} 
-                        alt={item.product?.title || "Product"}
-                        onError={(e) => e.target.src = "https://placehold.co/60x60?text=No+Image"}
+                        src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
+                        alt={product.title}
+                        onError={() => setImgError(true)}
                       />
                       <div className="order-item-details">
                         <h4>{item.product?.title || "Unknown Product"}</h4>

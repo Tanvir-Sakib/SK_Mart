@@ -106,11 +106,9 @@ const ProductDetail = () => {
       <div className="product-detail">
         <div className="product-image">
           <img 
-            src={getImageUrl(product.image)} 
+            src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
             alt={product.title}
-            onError={(e) => {
-              e.target.src = "https://via.placeholder.com/500x500?text=No+Image";
-            }}
+            onError={() => setImgError(true)}
           />
         </div>
 

@@ -202,10 +202,9 @@ const AdminProducts = () => {
               <tr key={product._id}>
                 <td>
                   <img 
-                    src={`${API_URL}${product.image}`} 
-                    alt={product.title} 
-                    style={{ width: 50, height: 50, objectFit: "cover", borderRadius: "4px" }}
-                    onError={(e) => e.target.src = "https://placehold.co/50x50?text=No+Image"}
+                    src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
+                    alt={product.title}
+                    onError={() => setImgError(true)}
                   />
                 </td>
                 <td>{product.title}</td>

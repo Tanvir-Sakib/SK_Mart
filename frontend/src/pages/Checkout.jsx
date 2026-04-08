@@ -219,9 +219,9 @@ const Checkout = () => {
               {cart.items.map((item) => (
                 <div key={item.product?._id} className="summary-item">
                   <img 
-                    src={getImageUrl(item.product?.image)} 
-                    alt={item.product?.title}
-                    onError={(e) => e.target.src = "https://placehold.co/60x60?text=No+Image"}
+                    src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
+                    alt={product.title}
+                    onError={() => setImgError(true)}
                   />
                   <div className="summary-item-details">
                     <h4>{item.product?.title}</h4>
