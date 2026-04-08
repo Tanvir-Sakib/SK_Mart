@@ -2,16 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { apiClient, endpoints, getImageUrl } from "../utils/api";
 import Invoice from "../components/Invoice";
-
-
-const [imgError, setImgError] = useState(false);
-
-// In the img tag
-<img 
-  src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
-  alt={product.title}
-  onError={() => setImgError(true)}
-/>
+import { FALLBACK_IMAGE } from "../utils/constants";
 
 const Orders = () => {
   const { token } = useContext(AuthContext);
@@ -20,6 +11,16 @@ const Orders = () => {
   const [error, setError] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [imgErrors, setImgErrors] = useState({});
+  
+  const handleImageError = (productId) => {
+    setImgErrors(prev => ({ ...prev, [productId]: true }));
+  };
+
+  const getProductImageUrl = (product) => {
+    if (imgErrors[product?._id]) return FALLBACK_IMAGE;
+    return getImageUrl(product?.image);
+  };
 
   useEffect(() => {
     fetchOrders();

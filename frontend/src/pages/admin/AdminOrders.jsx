@@ -2,6 +2,8 @@ import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { apiClient, endpoints, getImageUrl } from "../../utils/api";
 import "./Admin.css";
+import { FALLBACK_IMAGE } from "../../utils/constants";
+
 
 const AdminOrders = () => {
   const { token } = useContext(AuthContext);
@@ -9,7 +11,15 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedOrder, setExpandedOrder] = useState(null);
-
+  const [imgErrors, setImgErrors] = useState({});
+  
+  const handleImageError = (productId) => {
+    setImgErrors(prev => ({ ...prev, [productId]: true }));
+  };  
+    const getProductImageUrl = (product) => {
+    if (imgErrors[product?._id]) return FALLBACK_IMAGE;
+    return getImageUrl(product.image);
+  };
   useEffect(() => {
     fetchOrders();
   }, []);

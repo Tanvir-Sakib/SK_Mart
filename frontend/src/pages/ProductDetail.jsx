@@ -3,19 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { apiClient, endpoints, getImageUrl } from "../utils/api";
-
-
-const [imgError, setImgError] = useState(false);
-
-// In the img tag
-<img 
-  src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
-  alt={product.title}
-  onError={() => setImgError(true)}
-/>
+import { FALLBACK_IMAGE } from "../utils/constants";
 
 const ProductDetail = () => {
-  const { id } = useParams(); // Make sure this matches the route parameter name
+  const { id } = useParams();
   const navigate = useNavigate();
   const { token } = useContext(AuthContext);
   const { addToCart } = useContext(CartContext);
@@ -26,14 +17,11 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
-    console.log("Product ID from URL:", id); // Debug log
     if (id) {
       fetchProduct();
-    } else {
-      setError("No product ID provided");
-      setLoading(false);
     }
   }, [id]);
 
@@ -41,15 +29,7 @@ const ProductDetail = () => {
     try {
       setLoading(true);
       const response = await apiClient.get(endpoints.products.getSingle(id));
-      console.log("Product fetched:", response.data);
-      
-      // Handle response format - if it's wrapped in a products property
-      let productData = response.data;
-      if (response.data && response.data.product) {
-        productData = response.data.product;
-      }
-      
-      setProduct(productData);
+      setProduct(response.data);
     } catch (error) {
       console.error("Error fetching product:", error);
       setError(error.response?.data?.message || "Failed to fetch product");
@@ -82,19 +62,10 @@ const ProductDetail = () => {
     }
   };
 
+  const imageUrl = imgError ? FALLBACK_IMAGE : getImageUrl(product?.image);
+
   if (loading) return <div className="loading">Loading product...</div>;
-  
-  if (error) {
-    return (
-      <div className="error-container">
-        <h2>Error Loading Product</h2>
-        <p>{error}</p>
-        <button onClick={() => navigate(-1)}>Go Back</button>
-        <button onClick={fetchProduct}>Try Again</button>
-      </div>
-    );
-  }
-  
+  if (error) return <div className="error">{error}</div>;
   if (!product) return <div className="error">Product not found</div>;
 
   return (
@@ -106,7 +77,7 @@ const ProductDetail = () => {
       <div className="product-detail">
         <div className="product-image">
           <img 
-            src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
+            src={imageUrl}
             alt={product.title}
             onError={() => setImgError(true)}
           />
@@ -114,9 +85,7 @@ const ProductDetail = () => {
 
         <div className="product-info">
           <h1>{product.title}</h1>
-          <p className="category">
-            Category: {product.category?.name || "Uncategorized"}
-          </p>
+          <p className="category">Category: {product.category?.name || "Uncategorized"}</p>
           <p className="price">৳ {product.price}</p>
           <p className="description">{product.description}</p>
           <p className={`stock ${product.stock === 0 ? "out-of-stock" : ""}`}>
@@ -127,35 +96,18 @@ const ProductDetail = () => {
             <>
               <div className="quantity-selector">
                 <label>Quantity: </label>
-                <button 
-                  onClick={() => updateQuantity(-1)}
-                  disabled={quantity <= 1}
-                >
-                  -
-                </button>
+                <button onClick={() => updateQuantity(-1)} disabled={quantity <= 1}>-</button>
                 <span>{quantity}</span>
-                <button 
-                  onClick={() => updateQuantity(1)}
-                  disabled={quantity >= product.stock}
-                >
-                  +
-                </button>
+                <button onClick={() => updateQuantity(1)} disabled={quantity >= product.stock}>+</button>
               </div>
-
-              <button 
-                onClick={handleAddToCart} 
-                className="add-to-cart-btn"
-                disabled={adding}
-              >
+              <button onClick={handleAddToCart} className="add-to-cart-btn" disabled={adding}>
                 {adding ? "Adding to Cart..." : "Add to Cart"}
               </button>
             </>
           )}
 
           {addedToCart && (
-            <div className="success-message">
-              ✓ Product added to cart successfully!
-            </div>
+            <div className="success-message">✓ Product added to cart successfully!</div>
           )}
         </div>
       </div>

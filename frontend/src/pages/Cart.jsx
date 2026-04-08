@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import { getImageUrl } from "../utils/api";
-
+import { FALLBACK_IMAGE } from "../utils/constants";
 
 const [imgError, setImgError] = useState(false);
 
@@ -18,7 +18,16 @@ const Cart = () => {
   } = useContext(CartContext);
   const { token } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [imgErrors, setImgErrors] = useState({});
 
+  const handleImageError = (productId) => {
+    setImgErrors(prev => ({ ...prev, [productId]: true }));
+  };
+
+  const getProductImageUrl = (product) => {
+    if (imgErrors[product?._id]) return FALLBACK_IMAGE;
+    return getImageUrl(product?.image);
+  };
   const calculateTotal = () => {
     if (!cart.items) return 0;
     return cart.items.reduce((total, item) => {
@@ -89,10 +98,10 @@ const Cart = () => {
         {cart.items.map((item) => (
           <div key={item.product?._id} className="cart-item">
             <div className="cart-item-product">
-                <img 
-                  src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
-                  alt={product.title}
-                  onError={() => setImgError(true)}
+              <img 
+                  src={getProductImageUrl(item.product)} 
+                  alt={item.product?.title}
+                  onError={() => handleImageError(item.product?._id)}
                 />
               <div>
                 <h4>{item.product?.title}</h4>
