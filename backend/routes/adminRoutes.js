@@ -8,9 +8,8 @@ const User = require("../models/user");
 const Order = require("../models/order");
 const Product = require("../models/product");
 const Category = require("../models/category");
-const { upload } = require("../config/cloudinary");
 
-// Configure multer for image upload
+// Configure multer for image upload - ONLY ONE OF THESE
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
@@ -21,14 +20,13 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage: storage }); // ONLY ONE upload declaration
 
-// Apply both middlewares - order matters! First auth, then admin
+// Apply middlewares
 router.use(authMiddleware);
 router.use(adminMiddleware);
 
 // ========== PRODUCT MANAGEMENT ==========
-// Get all products
 router.get("/products", async (req, res) => {
   try {
     const products = await Product.find().populate("category", "name");
@@ -38,9 +36,12 @@ router.get("/products", async (req, res) => {
   }
 });
 
-// Create product with image upload
+// Create product - WITH FILE UPLOAD
 router.post("/products", upload.single("image"), async (req, res) => {
   try {
+    console.log("Creating product with:", req.body);
+    console.log("Uploaded file:", req.file);
+    
     const { title, description, price, category, stock } = req.body;
     
     const product = await Product.create({
@@ -49,7 +50,7 @@ router.post("/products", upload.single("image"), async (req, res) => {
       price: Number(price),
       category,
       stock: Number(stock),
-      image: req.file ? req.file.path : "/uploads/default.jpg" // Cloudinary returns URL
+      image: req.file ? `/uploads/${req.file.filename}` : "/uploads/default.jpg"
     });
     
     const populatedProduct = await Product.findById(product._id).populate("category", "name");
@@ -60,13 +61,9 @@ router.post("/products", upload.single("image"), async (req, res) => {
   }
 });
 
-// UPDATE product - WITH OPTIONAL FILE UPLOAD
+// UPDATE product
 router.put("/products/:id", upload.single("image"), async (req, res) => {
   try {
-    console.log("Updating product ID:", req.params.id);
-    console.log("Update data:", req.body);
-    console.log("Uploaded file:", req.file);
-    
     const { title, description, price, category, stock } = req.body;
     
     const updateData = {
@@ -77,7 +74,6 @@ router.put("/products/:id", upload.single("image"), async (req, res) => {
       stock: Number(stock),
     };
     
-    // Only add image if a new file was uploaded
     if (req.file) {
       updateData.image = `/uploads/${req.file.filename}`;
     }
@@ -85,20 +81,16 @@ router.put("/products/:id", upload.single("image"), async (req, res) => {
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       updateData,
-      { new: true, runValidators: true }
+      { new: true }
     ).populate("category", "name");
     
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
     
-    console.log("Product updated successfully:", product);
-    res.json({
-      success: true,
-      product: product
-    });
+    res.json({ success: true, product });
   } catch (error) {
-    console.error("Error updating product:", error);
+    console.error("Update product error:", error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -110,7 +102,7 @@ router.delete("/products/:id", async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-    res.json({ message: "Product deleted successfully" });
+    res.json({ success: true, message: "Product deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -129,11 +121,9 @@ router.get("/categories", async (req, res) => {
 router.post("/categories", async (req, res) => {
   try {
     const { name } = req.body;
-    
     if (!name) {
       return res.status(400).json({ message: "Category name is required" });
     }
-    
     const category = await Category.create({ name });
     res.status(201).json(category);
   } catch (error) {
@@ -144,11 +134,7 @@ router.post("/categories", async (req, res) => {
 router.put("/categories/:id", async (req, res) => {
   try {
     const { name } = req.body;
-    const category = await Category.findByIdAndUpdate(
-      req.params.id,
-      { name },
-      { new: true }
-    );
+    const category = await Category.findByIdAndUpdate(req.params.id, { name }, { new: true });
     res.json(category);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -157,8 +143,8 @@ router.put("/categories/:id", async (req, res) => {
 
 router.delete("/categories/:id", async (req, res) => {
   try {
-    const category = await Category.findByIdAndDelete(req.params.id);
-    res.json({ message: "Category deleted successfully" });
+    await Category.findByIdAndDelete(req.params.id);
+    res.json({ message: "Category deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -180,11 +166,7 @@ router.get("/orders", async (req, res) => {
 router.put("/orders/:id/status", async (req, res) => {
   try {
     const { status } = req.body;
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
+    const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
     res.json(order);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -204,11 +186,7 @@ router.get("/users", async (req, res) => {
 router.put("/users/:id/role", async (req, res) => {
   try {
     const { role } = req.body;
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { role },
-      { new: true }
-    ).select("-password");
+    const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true }).select("-password");
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -218,7 +196,7 @@ router.put("/users/:id/role", async (req, res) => {
 router.delete("/users/:id", async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
-    res.json({ message: "User deleted successfully" });
+    res.json({ message: "User deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
