@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import './App.css'; 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
