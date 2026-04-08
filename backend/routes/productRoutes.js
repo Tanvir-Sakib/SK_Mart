@@ -8,7 +8,6 @@ const Product = require("../models/product");
 const Category = require("../models/category");
 const path = require("path");
 
-// Configure multer for image upload
 const {
   createProduct,
   getProducts,
@@ -30,10 +29,8 @@ router.get("/", async (req, res) => {
       limit = 12 
     } = req.query;
 
-    // Build query object
     let query = {};
 
-    // Search by title or description
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -41,51 +38,34 @@ router.get("/", async (req, res) => {
       ];
     }
 
-    // Filter by category
     if (category) {
       query.category = category;
     }
 
-    // Filter by price range
     if (minPrice || maxPrice) {
       query.price = {};
       if (minPrice) query.price.$gte = Number(minPrice);
       if (maxPrice) query.price.$lte = Number(maxPrice);
     }
 
-    // Build sort object
     let sortOption = {};
     switch(sort) {
-      case 'price_asc':
-        sortOption = { price: 1 };
-        break;
-      case 'price_desc':
-        sortOption = { price: -1 };
-        break;
-      case 'name_asc':
-        sortOption = { title: 1 };
-        break;
-      case 'name_desc':
-        sortOption = { title: -1 };
-        break;
-      case 'newest':
-        sortOption = { createdAt: -1 };
-        break;
-      default:
-        sortOption = { createdAt: -1 };
+      case 'price_asc': sortOption = { price: 1 }; break;
+      case 'price_desc': sortOption = { price: -1 }; break;
+      case 'name_asc': sortOption = { title: 1 }; break;
+      case 'name_desc': sortOption = { title: -1 }; break;
+      case 'newest': sortOption = { createdAt: -1 }; break;
+      default: sortOption = { createdAt: -1 };
     }
 
-    // Pagination
     const skip = (page - 1) * limit;
     
-    // Execute query
     const products = await Product.find(query)
       .populate("category", "name")
       .sort(sortOption)
       .skip(skip)
       .limit(parseInt(limit));
 
-    // Get total count for pagination
     const total = await Product.countDocuments(query);
 
     res.json({
@@ -101,12 +81,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-
-
-// Public: get products
-router.get("/", getProducts);
-router.get("/:id", getSingleProduct);
-
 // Get single product
 router.get("/:id", async (req, res) => {
   try {
@@ -120,8 +94,6 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: "Internal Server Error", error: err.message });
   }
 });
-
-
 
 // Admin-only: CRUD
 router.post("/", authMiddleware, adminMiddleware, upload.single("image"), createProduct);
