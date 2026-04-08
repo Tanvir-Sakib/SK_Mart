@@ -19,11 +19,11 @@ router.post("/", authMiddleware, createOrder);
 router.get("/my-orders", authMiddleware, getMyOrders);
 
 // User - Delete order
-router.delete("/:id", authMiddleware, deleteOrder);
+router.delete("/my-orders/:id", authMiddleware, deleteOrder);
 
 // Admin order panel
 router.get("/", authMiddleware, adminMiddleware, getAllOrders);
 
 // Admin - Update order status
-router.put("/:id/status", authMiddleware, adminMiddleware, updateOrderStatus);
+router.put("/my-orders/:id/status", authMiddleware, adminMiddleware, updateOrderStatus);
 module.exports = router;
