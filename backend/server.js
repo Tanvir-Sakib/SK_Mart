@@ -11,10 +11,7 @@ const app = express();
 // CORS configuration
 app.use(cors({
   origin: [
-    "http://localhost:5173",
-    "http://localhost:5000",
     "https://skmart-five.vercel.app",
-    "https://skmart-y04r.onrender.com"
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
