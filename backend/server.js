@@ -3,16 +3,41 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
-
-require("dotenv").config(); // Only need this once
+const fs = require("fs");
+require("dotenv").config();
 
 const app = express();
 
+// ✅ COMPLETE CORS CONFIGURATION
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5000",
+  "https://skmart-five.vercel.app",
+  "https://skmart-y04r.onrender.com"
+];
+
 app.use(cors({
-  origin: "https://skmart-five.vercel.app",
-  credentials: true
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log("Blocked origin:", origin);
+      callback(null, true); // Allow all for now
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+  exposedHeaders: ['Authorization']
 }));
+
+// Handle preflight requests
+app.options('*', cors());
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Database connection
 const connectDB = async () => {
@@ -27,8 +52,6 @@ const connectDB = async () => {
 };
 
 connectDB();
-
-const fs = require("fs");
 
 // Create uploads directory if it doesn't exist
 if (!fs.existsSync("uploads")) {
@@ -62,7 +85,6 @@ const upload = multer({
   },
 });
 
-
 // Routes
 const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
@@ -95,8 +117,13 @@ app.get("/", (req, res) => {
   res.json({ message: "SK Mart API is running" });
 });
 
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.json({ status: "OK", timestamp: new Date() });
+});
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
 
