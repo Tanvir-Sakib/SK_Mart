@@ -102,6 +102,9 @@ router.put("/change-password", authMiddleware, async (req, res) => {
 router.get("/addresses", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
     res.json(user.addresses || []);
   } catch (error) {
     console.error("Get addresses error:", error);
@@ -112,10 +115,18 @@ router.get("/addresses", authMiddleware, async (req, res) => {
 // Add new address
 router.post("/addresses", authMiddleware, async (req, res) => {
   try {
+    console.log("=== ADD ADDRESS ===");
+    console.log("User ID:", req.user.id);
+    console.log("Request body:", req.body);
+    
     const { fullName, address, city, postalCode, phone, email, isDefault } = req.body;
     
-    const user = await User.findById(req.user.id);
+    // Validate required fields
+    if (!fullName || !address || !city || !phone || !email) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
     
+    const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -130,10 +141,25 @@ router.post("/addresses", authMiddleware, async (req, res) => {
       user.addresses.forEach(addr => { addr.isDefault = false; });
     }
     
-    user.addresses.push({ fullName, address, city, postalCode, phone, email, isDefault });
+    // Create new address object
+    const newAddress = {
+      fullName,
+      address,
+      city,
+      postalCode: postalCode || "",
+      phone,
+      email,
+      isDefault: isDefault || false
+    };
+    
+    user.addresses.push(newAddress);
     await user.save();
     
-    res.status(201).json({ message: "Address added successfully", addresses: user.addresses });
+    res.status(201).json({ 
+      message: "Address added successfully", 
+      addresses: user.addresses 
+    });
+    
   } catch (error) {
     console.error("Add address error:", error);
     res.status(500).json({ message: error.message });
@@ -219,6 +245,5 @@ router.put("/addresses/:addressId/default", authMiddleware, async (req, res) => 
     res.status(500).json({ message: error.message });
   }
 });
-
 
 module.exports = router;
