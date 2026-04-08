@@ -1,6 +1,16 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
+const addressSchema = new mongoose.Schema({
+  fullName: { type: String, required: true },
+  address: { type: String, required: true },
+  city: { type: String, required: true },
+  postalCode: { type: String },
+  phone: { type: String, required: true },
+  email: { type: String, required: true },
+  isDefault: { type: Boolean, default: false },
+}, { timestamps: true });
+
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -20,24 +30,21 @@ const userSchema = new mongoose.Schema({
     enum: ["user", "admin"],
     default: "user",
   },
+  addresses: [addressSchema],  // Add this line
 }, {
   timestamps: true,
 });
 
-// Hash password manually instead of using pre-save hook
-userSchema.methods.hashPassword = async function(password) {
+// Hash password before saving
+userSchema.pre("save", async function(next) {
+  if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(password, salt);
-  return this.password;
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+userSchema.methods.comparePassword = async function(password) {
+  return await bcrypt.compare(password, this.password);
 };
 
-// Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
-  try {
-    return await bcrypt.compare(candidatePassword, this.password);
-  } catch (error) {
-    throw error;
-  }
-};
-
-module.exports = mongoose.model("user", userSchema);
+module.exports = mongoose.model("User", userSchema);

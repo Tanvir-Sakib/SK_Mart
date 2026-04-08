@@ -96,5 +96,102 @@ router.put("/change-password", authMiddleware, async (req, res) => {
   }
 });
 
+// ========== ADDRESS MANAGEMENT ==========
+
+// Get all addresses
+router.get("/addresses", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    res.json(user.addresses || []);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Add new address
+router.post("/addresses", authMiddleware, async (req, res) => {
+  try {
+    const { fullName, address, city, postalCode, phone, email, isDefault } = req.body;
+    
+    const user = await User.findById(req.user.id);
+    
+    // If this is default, remove default from others
+    if (isDefault) {
+      user.addresses.forEach(addr => { addr.isDefault = false; });
+    }
+    
+    user.addresses.push({ fullName, address, city, postalCode, phone, email, isDefault });
+    await user.save();
+    
+    res.status(201).json({ message: "Address added successfully", addresses: user.addresses });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update address
+router.put("/addresses/:addressId", authMiddleware, async (req, res) => {
+  try {
+    const { fullName, address, city, postalCode, phone, email, isDefault } = req.body;
+    const user = await User.findById(req.user.id);
+    
+    const addressToUpdate = user.addresses.id(req.params.addressId);
+    if (!addressToUpdate) {
+      return res.status(404).json({ message: "Address not found" });
+    }
+    
+    // If this is default, remove default from others
+    if (isDefault) {
+      user.addresses.forEach(addr => { addr.isDefault = false; });
+    }
+    
+    addressToUpdate.fullName = fullName;
+    addressToUpdate.address = address;
+    addressToUpdate.city = city;
+    addressToUpdate.postalCode = postalCode;
+    addressToUpdate.phone = phone;
+    addressToUpdate.email = email;
+    addressToUpdate.isDefault = isDefault;
+    
+    await user.save();
+    res.json({ message: "Address updated successfully", addresses: user.addresses });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Delete address
+router.delete("/addresses/:addressId", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    user.addresses.pull({ _id: req.params.addressId });
+    await user.save();
+    res.json({ message: "Address deleted successfully", addresses: user.addresses });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Set default address
+router.put("/addresses/:addressId/default", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    
+    // Remove default from all
+    user.addresses.forEach(addr => { addr.isDefault = false; });
+    
+    // Set new default
+    const address = user.addresses.id(req.params.addressId);
+    if (address) {
+      address.isDefault = true;
+    }
+    
+    await user.save();
+    res.json({ message: "Default address set", addresses: user.addresses });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 module.exports = router;

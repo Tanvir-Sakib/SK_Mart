@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
@@ -10,6 +10,8 @@ const Checkout = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState("");
 
   const [shippingDetails, setShippingDetails] = useState({
     fullName: "",
@@ -21,6 +23,49 @@ const Checkout = () => {
   });
 
   const [paymentMethod, setPaymentMethod] = useState("cash");
+
+  // Fetch saved addresses on load
+  useEffect(() => {
+    fetchSavedAddresses();
+  }, []);
+
+  const fetchSavedAddresses = async () => {
+    try {
+      const response = await apiClient.get("/api/auth/addresses");
+      setSavedAddresses(response.data);
+      
+      // Find default address
+      const defaultAddress = response.data.find(addr => addr.isDefault);
+      if (defaultAddress) {
+        setSelectedAddressId(defaultAddress._id);
+        setShippingDetails({
+          fullName: defaultAddress.fullName,
+          address: defaultAddress.address,
+          city: defaultAddress.city,
+          postalCode: defaultAddress.postalCode || "",
+          phone: defaultAddress.phone,
+          email: defaultAddress.email
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching addresses:", error);
+    }
+  };
+
+  const handleSelectAddress = (addressId) => {
+    const address = savedAddresses.find(addr => addr._id === addressId);
+    if (address) {
+      setSelectedAddressId(addressId);
+      setShippingDetails({
+        fullName: address.fullName,
+        address: address.address,
+        city: address.city,
+        postalCode: address.postalCode || "",
+        phone: address.phone,
+        email: address.email
+      });
+    }
+  };
 
   const calculateTotal = () => {
     if (!cart.items) return 0;
@@ -34,6 +79,8 @@ const Checkout = () => {
       ...shippingDetails,
       [e.target.name]: e.target.value
     });
+    // Clear selected address when user manually edits
+    setSelectedAddressId("");
   };
 
   const handlePlaceOrder = async (e) => {
@@ -86,9 +133,7 @@ const Checkout = () => {
     return (
       <div className="cart-empty">
         <h2>Your cart is empty</h2>
-        <button onClick={() => navigate("/")} className="continue-shopping-btn">
-          Continue Shopping
-        </button>
+        <button onClick={() => navigate("/")} className="continue-shopping-btn">Continue Shopping</button>
       </div>
     );
   }
@@ -101,6 +146,23 @@ const Checkout = () => {
         <div className="checkout-content">
           <div className="shipping-section">
             <h2>Shipping Information</h2>
+            
+            {/* Saved Addresses Dropdown */}
+            {savedAddresses.length > 0 && (
+              <div className="saved-addresses">
+                <label>Select a saved address:</label>
+                <select value={selectedAddressId} onChange={(e) => handleSelectAddress(e.target.value)}>
+                  <option value="">-- Select saved address --</option>
+                  {savedAddresses.map(addr => (
+                    <option key={addr._id} value={addr._id}>
+                      {addr.isDefault ? "⭐ " : ""}{addr.fullName} - {addr.address}, {addr.city}
+                    </option>
+                  ))}
+                </select>
+                <p className="or-text">OR fill in manually:</p>
+              </div>
+            )}
+            
             <form onSubmit={handlePlaceOrder}>
               <div className="form-group">
                 <label>Full Name *</label>
