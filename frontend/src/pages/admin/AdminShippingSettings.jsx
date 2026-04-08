@@ -234,7 +234,6 @@ const AdminShippingSettings = () => {
               <tr>
                 <th>Order Amount</th>
                 <th>Shipping Fee (Dhaka)</th>
-                <th>Shipping Fee (Chattogram)</th>
                 <th>Shipping Fee (Other)</th>
               </tr>
             </thead>
