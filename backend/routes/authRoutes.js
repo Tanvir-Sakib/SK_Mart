@@ -105,10 +105,10 @@ router.get("/addresses", authMiddleware, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json(user.addresses || []);
+    return res.json(user.addresses || []);
   } catch (error) {
     console.error("Get addresses error:", error);
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 });
 
@@ -117,13 +117,13 @@ router.post("/addresses", authMiddleware, async (req, res) => {
   try {
     console.log("=== ADD ADDRESS ===");
     console.log("User ID:", req.user.id);
-    console.log("Request body:", req.body);
+    console.log("Body:", req.body);
     
     const { fullName, address, city, postalCode, phone, email, isDefault } = req.body;
     
-    // Validate required fields
+    // Simple validation
     if (!fullName || !address || !city || !phone || !email) {
-      return res.status(400).json({ message: "Missing required fields" });
+      return res.status(400).json({ message: "All fields are required" });
     }
     
     const user = await User.findById(req.user.id);
@@ -131,18 +131,20 @@ router.post("/addresses", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
     
-    // Initialize addresses array if it doesn't exist
+    // Initialize addresses if needed
     if (!user.addresses) {
       user.addresses = [];
     }
     
-    // If this is default, remove default from others
+    // If default, unset others
     if (isDefault) {
-      user.addresses.forEach(addr => { addr.isDefault = false; });
+      user.addresses.forEach(addr => {
+        addr.isDefault = false;
+      });
     }
     
-    // Create new address object
-    const newAddress = {
+    // Add new address
+    user.addresses.push({
       fullName,
       address,
       city,
@@ -150,19 +152,19 @@ router.post("/addresses", authMiddleware, async (req, res) => {
       phone,
       email,
       isDefault: isDefault || false
-    };
+    });
     
-    user.addresses.push(newAddress);
     await user.save();
     
-    res.status(201).json({ 
+    return res.status(201).json({ 
+      success: true,
       message: "Address added successfully", 
       addresses: user.addresses 
     });
     
   } catch (error) {
     console.error("Add address error:", error);
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 });
 
@@ -181,9 +183,10 @@ router.put("/addresses/:addressId", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Address not found" });
     }
     
-    // If this is default, remove default from others
     if (isDefault) {
-      user.addresses.forEach(addr => { addr.isDefault = false; });
+      user.addresses.forEach(addr => {
+        addr.isDefault = false;
+      });
     }
     
     addressToUpdate.fullName = fullName;
@@ -195,10 +198,10 @@ router.put("/addresses/:addressId", authMiddleware, async (req, res) => {
     addressToUpdate.isDefault = isDefault;
     
     await user.save();
-    res.json({ message: "Address updated successfully", addresses: user.addresses });
+    return res.json({ success: true, message: "Address updated", addresses: user.addresses });
   } catch (error) {
     console.error("Update address error:", error);
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 });
 
@@ -213,10 +216,10 @@ router.delete("/addresses/:addressId", authMiddleware, async (req, res) => {
     
     user.addresses.pull({ _id: req.params.addressId });
     await user.save();
-    res.json({ message: "Address deleted successfully", addresses: user.addresses });
+    return res.json({ success: true, message: "Address deleted", addresses: user.addresses });
   } catch (error) {
     console.error("Delete address error:", error);
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 });
 
@@ -229,20 +232,20 @@ router.put("/addresses/:addressId/default", authMiddleware, async (req, res) => 
       return res.status(404).json({ message: "User not found" });
     }
     
-    // Remove default from all
-    user.addresses.forEach(addr => { addr.isDefault = false; });
+    user.addresses.forEach(addr => {
+      addr.isDefault = false;
+    });
     
-    // Set new default
     const address = user.addresses.id(req.params.addressId);
     if (address) {
       address.isDefault = true;
     }
     
     await user.save();
-    res.json({ message: "Default address set", addresses: user.addresses });
+    return res.json({ success: true, message: "Default address set", addresses: user.addresses });
   } catch (error) {
     console.error("Set default address error:", error);
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 });
 
