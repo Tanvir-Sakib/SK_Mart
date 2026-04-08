@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { apiClient, endpoints, getImageUrl } from "../../utils/api";
 import { Link } from "react-router-dom";
-import {formatCurrency} from "../../utils/helpers";
+import {formatCurrency} from "../../utils/currency";
 
 import "./Admin.css";
 
