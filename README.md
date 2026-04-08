@@ -14,21 +14,6 @@ A full-featured e-commerce platform built with the MERN stack (MongoDB, Express.
 **https://skmart-five.vercel.app**:
 
 
-## 📋 Table of Contents
-
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Environment Variables](#environment-variables)
-- [API Endpoints](#api-endpoints)
-- [Database Schema](#database-schema)
-- [Default Credentials](#default-credentials)
-- [Screenshots](#screenshots)
-- [Future Enhancements](#future-enhancements)
-- [Contributing](#contributing)
-- [License](#license)
-
 ## ✨ Features
 
 ### 👤 User Features
