@@ -18,7 +18,7 @@ router.get("/", authMiddleware, async (req, res) => {
 });
 
 // Add to cart
-router.post("/add", authMiddleware, async (req, res) => {
+router.post("/", authMiddleware, async (req, res) => {
   try {
     const { productId, quantity } = req.body;
     let cart = await Cart.findOne({ user: req.user.id });
