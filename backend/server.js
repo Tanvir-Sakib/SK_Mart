@@ -31,15 +31,13 @@ const connectDB = async () => {
     console.log("✅ MongoDB Connected Successfully");
     console.log(`📊 Using database: ${mongoose.connection.name}`);
     
-    // ✅ AFTER connection, require models
+  
     require("./models/category");
     require("./models/product");
     require("./models/user");
     require("./models/cart");
     require("./models/order");
     
-    // ✅ NOW check registered models
-    console.log("Registered models:", mongoose.modelNames());
     
   } catch (error) {
     console.error("❌ MongoDB Connection Error:", error.message);
