@@ -202,9 +202,10 @@ const AdminProducts = () => {
               <tr key={product._id}>
                 <td>
                   <img 
-                    src={getImageUrl(product.image)}
-                    alt={product.title}
-                    style={{ width: 50, height: 50, objectFit: "cover" }}
+                    src={getImageUrl(product.image)} 
+                    alt={product.title} 
+                    className="product-thumb"
+                    style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }}
                   />
                 </td>
                 <td>{product.title}</td>
