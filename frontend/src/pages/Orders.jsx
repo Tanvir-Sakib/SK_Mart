@@ -9,6 +9,7 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     fetchOrders();
@@ -17,11 +18,10 @@ const Orders = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      setError(null); // Now this works
+      setError(null);
       const response = await apiClient.get(endpoints.orders.myOrders);
       console.log("Orders response:", response.data);
       
-      // Ensure orders is an array
       let ordersData = [];
       if (Array.isArray(response.data)) {
         ordersData = response.data;
@@ -32,10 +32,33 @@ const Orders = () => {
       setOrders(ordersData);
     } catch (error) {
       console.error("Error fetching orders:", error);
-      setError(error.response?.data?.message || "Failed to fetch orders"); // Now this works
-      setOrders([]);
+      setError(error.response?.data?.message || "Failed to fetch orders");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    // Confirm deletion
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this order? This action cannot be undone."
+    );
+    
+    if (!confirmed) return;
+    
+    setDeletingId(orderId);
+    
+    try {
+      await apiClient.delete(`${endpoints.orders.myOrders}/${orderId}`);
+      alert("Order deleted successfully!");
+      
+      // Remove the deleted order from state
+      setOrders(orders.filter(order => order._id !== orderId));
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      alert(error.response?.data?.message || "Failed to delete order");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -154,12 +177,21 @@ const Orders = () => {
                 <div className="order-total">
                   <strong>Total Amount:</strong> ৳ {order.totalAmount || order.total || 0}
                 </div>
-                <button 
-                  className="invoice-btn"
-                  onClick={() => handleDownloadInvoice(order)}
-                >
-                  📄 Download Invoice
-                </button>
+                <div className="order-actions">
+                  <button 
+                    className="invoice-btn"
+                    onClick={() => handleDownloadInvoice(order)}
+                  >
+                    📄 Download Invoice
+                  </button>
+                  <button 
+                    className={`delete-order-btn ${order.status !== "pending" ? "disabled" : ""}`}
+                    onClick={() => handleDeleteOrder(order._id)}
+                    disabled={deletingId === order._id || order.status !== "pending"}
+                  >
+                    {deletingId === order._id ? "Deleting..." : "🗑️ Delete Order"}
+                  </button>
+                </div>
               </div>
             </div>
           ))}

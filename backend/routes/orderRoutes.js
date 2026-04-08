@@ -5,7 +5,8 @@ const {
   createOrder,
   getMyOrders,
   getAllOrders,
-  updateOrderStatus
+  updateOrderStatus,
+  deleteOrder,
 } = require("../controllers/orderController");
 
 const authMiddleware = require("../middleware/authMiddleware");
@@ -16,6 +17,9 @@ router.post("/", authMiddleware, createOrder);
 
 // User order history
 router.get("/my-orders", authMiddleware, getMyOrders);
+
+// User - Delete order
+router.delete("/:id", authMiddleware, deleteOrder);
 
 // Admin order panel
 router.get("/", authMiddleware, adminMiddleware, getAllOrders);

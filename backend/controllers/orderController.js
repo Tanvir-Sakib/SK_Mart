@@ -87,6 +87,44 @@ exports.getMyOrders = async (req, res) => {
   }
 };
 
+// Delete order (user can delete their own order)
+exports.deleteOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const userId = req.user.id;
+
+    // Find the order and check if it belongs to the user
+    const order = await Order.findById(orderId);
+    
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    
+    // Check if order belongs to the user
+    if (order.user.toString() !== userId) {
+      return res.status(403).json({ message: "You can only delete your own orders" });
+    }
+    
+    // Optional: Only allow deletion of pending orders
+    if (order.status !== "pending") {
+      return res.status(400).json({ message: "Only pending orders can be deleted" });
+    }
+    
+    await Order.findByIdAndDelete(orderId);
+    
+    res.json({ 
+      success: true, 
+      message: "Order deleted successfully" 
+    });
+  } catch (err) {
+    console.error("DELETE ORDER ERROR:", err);
+    res.status(500).json({
+      message: "Internal Server Error",
+      error: err.message,
+    });
+  }
+};
+
 // Admin - Get all orders
 exports.getAllOrders = async (req, res) => {
   try {
@@ -133,3 +171,4 @@ exports.updateOrderStatus = async (req, res) => {
     });
   }
 };
+

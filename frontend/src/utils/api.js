@@ -64,12 +64,13 @@ export const endpoints = {
   orders: {
     create: '/api/orders',
     myOrders: '/api/orders/my-orders',
+    delete: (id) => `/api/orders/${id}`,
     admin: {
       getAll: '/api/admin/orders',
       updateStatus: (id) => `/api/admin/orders/${id}/status`,
     }
   },
-  
+    
   // Admin endpoints
   admin: {
     stats: '/api/admin/stats',
