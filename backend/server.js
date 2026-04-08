@@ -8,18 +8,20 @@ require("dotenv").config();
 
 const app = express();
 
-// CORS configuration
+// ✅ SIMPLE CORS - Allow all origins for testing
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "http://localhost:5000",
-    "https://skmart-five.vercel.app",
-    "https://skmart-y04r.onrender.com"
-  ],
-  credentials: true,
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
 }));
+
+// ✅ Handle preflight requests explicitly
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+  res.sendStatus(200);
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
