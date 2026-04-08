@@ -1,13 +1,18 @@
 // src/utils/api.js
 import axios from "axios";
+import defaultImage from "../assets/default-image.svg";
 
 // Get the API URL from environment variables or use localhost for development
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 // Helper function to get full image URL
 export const getImageUrl = (imagePath) => {
-  if (!imagePath) return 'https://placehold.co/300x300?text=No+Image';
-  if (imagePath.startsWith('http')) return imagePath;
+  if (!imagePath) {
+    return defaultImage;
+  }
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
   const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
   return `${API_URL}${cleanPath}`;
 };

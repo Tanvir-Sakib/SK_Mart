@@ -4,6 +4,16 @@ import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { apiClient, endpoints, getImageUrl } from "../utils/api";
 
+
+const [imgError, setImgError] = useState(false);
+
+// In the img tag
+<img 
+  src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
+  alt={product.title}
+  onError={() => setImgError(true)}
+/>
+
 const ProductDetail = () => {
   const { id } = useParams(); // Make sure this matches the route parameter name
   const navigate = useNavigate();

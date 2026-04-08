@@ -3,6 +3,15 @@ import ProductCard from "../components/ProductCard";
 import CategoryNav from "../components/CategoryNav";
 import { apiClient, endpoints } from "../utils/api";
 
+const [imgError, setImgError] = useState(false);
+
+// In the img tag
+<img 
+  src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
+  alt={product.title}
+  onError={() => setImgError(true)}
+/>
+
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);

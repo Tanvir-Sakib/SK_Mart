@@ -3,6 +3,16 @@ import { AuthContext } from "../context/AuthContext";
 import { apiClient, endpoints, getImageUrl } from "../utils/api";
 import Invoice from "../components/Invoice";
 
+
+const [imgError, setImgError] = useState(false);
+
+// In the img tag
+<img 
+  src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
+  alt={product.title}
+  onError={() => setImgError(true)}
+/>
+
 const Orders = () => {
   const { token } = useContext(AuthContext);
   const [orders, setOrders] = useState([]);

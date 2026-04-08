@@ -4,6 +4,15 @@ import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import { apiClient, endpoints, getImageUrl } from "../utils/api";
 
+const [imgError, setImgError] = useState(false);
+
+// In the img tag
+<img 
+  src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
+  alt={product.title}
+  onError={() => setImgError(true)}
+/>
+
 const Checkout = () => {
   const { cart, cartCount, clearCart } = useContext(CartContext);
   const { token } = useContext(AuthContext);
