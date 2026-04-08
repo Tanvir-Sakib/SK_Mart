@@ -3,15 +3,6 @@ import ProductCard from "../components/ProductCard";
 import CategoryNav from "../components/CategoryNav";
 import { apiClient, endpoints } from "../utils/api";
 
-const [imgError, setImgError] = useState(false);
-
-// In the img tag
-<img 
-  src={imgError ? FALLBACK_IMAGE : getImageUrl(product.image)} 
-  alt={product.title}
-  onError={() => setImgError(true)}
-/>
-
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -22,25 +13,15 @@ const Products = () => {
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef(null);
 
-  // Fetch products based on search and category
-  const fetchProducts = useCallback(async () => {
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
     try {
-      setIsSearching(true);
-      setError(null);
+      setLoading(true);
+      const response = await apiClient.get(endpoints.products.getAll);
       
-      // Build query params
-      const params = new URLSearchParams();
-      if (searchTerm.trim()) params.append("search", searchTerm.trim());
-      if (selectedCategory) params.append("category", selectedCategory);
-      
-      const url = params.toString() 
-        ? `${endpoints.products.getAll}?${params}` 
-        : endpoints.products.getAll;
-      
-      console.log("Fetching products from:", url);
-      const response = await apiClient.get(url);
-      
-      // Extract products array
       let productsArray = [];
       if (response.data && Array.isArray(response.data.products)) {
         productsArray = response.data.products;
@@ -54,10 +35,9 @@ const Products = () => {
       console.error("Error fetching products:", error);
       setError(error.response?.data?.message || "Failed to fetch products");
     } finally {
-      setIsSearching(false);
       setLoading(false);
     }
-  }, [searchTerm, selectedCategory]);
+  };
 
   // Debounced search
   useEffect(() => {
@@ -66,9 +46,7 @@ const Products = () => {
     }
     
     searchTimeoutRef.current = setTimeout(() => {
-      if (searchTerm !== undefined) {
-        fetchProducts();
-      }
+      filterProducts();
     }, 300);
     
     return () => {
@@ -76,16 +54,34 @@ const Products = () => {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchTerm, fetchProducts]);
+  }, [searchTerm, selectedCategory, products]);
 
-  // Initial load
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  const filterProducts = () => {
+    if (!products.length) return;
+    
+    let filtered = [...products];
+    
+    if (selectedCategory) {
+      filtered = filtered.filter((product) => {
+        const productCategoryId = product.category?._id || product.category;
+        return productCategoryId === selectedCategory;
+      });
+    }
+    
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (product) =>
+          (product.title && product.title.toLowerCase().includes(term)) ||
+          (product.description && product.description.toLowerCase().includes(term))
+      );
+    }
+    
+    setFilteredProducts(filtered);
+  };
 
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
-    setLoading(true);
   };
 
   const handleSearch = (term) => {
@@ -95,7 +91,6 @@ const Products = () => {
   const handleFilterReset = () => {
     setSelectedCategory("");
     setSearchTerm("");
-    setLoading(true);
   };
 
   if (loading && products.length === 0) {
@@ -124,13 +119,13 @@ const Products = () => {
 
       <div className="results-info">
         <p>
-          {isSearching ? "Searching..." : `${filteredProducts.length} product${filteredProducts.length !== 1 ? "s" : ""} found`}
+          {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""} found
           {selectedCategory && " in selected category"}
           {searchTerm && ` for "${searchTerm}"`}
         </p>
       </div>
 
-      {filteredProducts.length === 0 && !isSearching ? (
+      {filteredProducts.length === 0 ? (
         <div className="no-products">
           <p>No products found matching your criteria.</p>
           <button onClick={handleFilterReset} className="reset-btn">
