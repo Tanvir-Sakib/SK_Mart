@@ -5,7 +5,6 @@ import defaultImage from "../assets/default-image.svg";
 // Get the API URL from environment variables or use localhost for development
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// Helper function to get full image URL
 export const getImageUrl = (imagePath) => {
   if (!imagePath) {
     return defaultImage;
@@ -98,24 +97,16 @@ export const apiClient = axios.create({
   },
 });
 
-// Add token to requests if it exists
+// Add token to requests
 apiClient.interceptors.request.use(
   (config) => {
-    // Ensure URL is a string
-    if (config.url && typeof config.url !== 'string') {
-      console.error('Invalid URL type:', config.url);
-      config.url = String(config.url);
-    }
-    
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Add response interceptor for error handling
