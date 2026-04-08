@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema({
     enum: ["user", "admin"],
     default: "user",
   },
-  addresses: [addressSchema],  // Add this line
+  addresses: [addressSchema],
 }, {
   timestamps: true,
 });
@@ -47,4 +47,4 @@ userSchema.methods.comparePassword = async function(password) {
   return await bcrypt.compare(password, this.password);
 };
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model("user", userSchema);

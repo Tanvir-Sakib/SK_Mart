@@ -32,7 +32,7 @@ const shippingSettingsSchema = new mongoose.Schema({
   },
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "user",
   },
 }, {
   timestamps: true,
