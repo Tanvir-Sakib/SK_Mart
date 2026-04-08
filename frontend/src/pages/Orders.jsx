@@ -187,7 +187,7 @@ const Orders = () => {
                   <button 
                     className={`delete-order-btn ${order.status !== "pending" ? "disabled" : ""}`}
                     onClick={() => handleDeleteOrder(order._id)}
-                    disabled={deletingId === order._id || order.status !== "pending"}
+                    disabled={deletingId === order._id || order.status !== "pending" || order.status === "cancelled"}
                   >
                     {deletingId === order._id ? "Cancelling..." : "🗑️ Cancel Order"}
                   </button>
