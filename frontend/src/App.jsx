@@ -17,6 +17,8 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminRoute from "./components/AdminRoute";
 import Profile from "./pages/Profile";
+import AdminShippingSettings from "./pages/admin/AdminShippingSettings";
+
 
 function App() {
   return (
@@ -76,6 +78,11 @@ function App() {
           <ProtectedRoute>
             <Orders />
           </ProtectedRoute>
+        } />
+        <Route path="/admin/shipping" element={
+          <AdminRoute>
+            <AdminShippingSettings />
+          </AdminRoute>
         } />
       </Routes>
     </Router>

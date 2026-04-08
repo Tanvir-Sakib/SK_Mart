@@ -8,6 +8,7 @@ const User = require("../models/user");
 const Order = require("../models/order");
 const Product = require("../models/product");
 const Category = require("../models/category");
+const ShippingSettings = require("../models/shippingSettings");
 
 // Configure multer for image upload - ONLY ONE OF THESE
 const storage = multer.diskStorage({
@@ -225,6 +226,86 @@ router.get("/stats", async (req, res) => {
       recentOrders,
       lowStockCount: lowStockProducts.length,
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ========== SHIPPING SETTINGS MANAGEMENT ==========
+
+// Get shipping settings
+router.get("/shipping-settings", async (req, res) => {
+  try {
+    const settings = await ShippingSettings.getInstance();
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update shipping settings
+router.put("/shipping-settings", async (req, res) => {
+  try {
+    const { freeShippingThreshold, cityRates, defaultFee, freeShippingEnabled } = req.body;
+    
+    let settings = await ShippingSettings.findOne();
+    if (!settings) {
+      settings = new ShippingSettings();
+    }
+    
+    if (freeShippingThreshold !== undefined) settings.freeShippingThreshold = freeShippingThreshold;
+    if (cityRates !== undefined) settings.cityRates = cityRates;
+    if (defaultFee !== undefined) settings.defaultFee = defaultFee;
+    if (freeShippingEnabled !== undefined) settings.freeShippingEnabled = freeShippingEnabled;
+    settings.updatedBy = req.user.id;
+    
+    await settings.save();
+    res.json({ success: true, settings });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Add city rate
+router.post("/shipping-settings/city", async (req, res) => {
+  try {
+    const { city, fee } = req.body;
+    const settings = await ShippingSettings.getInstance();
+    
+    settings.cityRates.push({ city, fee });
+    await settings.save();
+    
+    res.json({ success: true, settings });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update city rate
+router.put("/shipping-settings/city/:cityId", async (req, res) => {
+  try {
+    const { fee } = req.body;
+    const settings = await ShippingSettings.getInstance();
+    
+    const cityRate = settings.cityRates.id(req.params.cityId);
+    if (cityRate) {
+      cityRate.fee = fee;
+      await settings.save();
+    }
+    
+    res.json({ success: true, settings });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Delete city rate
+router.delete("/shipping-settings/city/:cityId", async (req, res) => {
+  try {
+    const settings = await ShippingSettings.getInstance();
+    settings.cityRates.pull({ _id: req.params.cityId });
+    await settings.save();
+    res.json({ success: true, settings });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

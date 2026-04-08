@@ -1,7 +1,31 @@
 const Order = require("../models/order");
 const Cart = require("../models/cart");
 const Product = require("../models/product");
+const ShippingSettings = require("../models/shippingSettings");
 
+// Calculate shipping fee based on dynamic settings
+const calculateShippingFee = async (city, subtotal) => {
+  try {
+    const settings = await ShippingSettings.getInstance();
+    
+    // Check free shipping
+    if (settings.freeShippingEnabled && subtotal >= settings.freeShippingThreshold) {
+      return 0;
+    }
+    
+    // Find city rate (case insensitive)
+    const cityRate = settings.cityRates.find(rate => 
+      rate.city.toLowerCase() === city?.toLowerCase()
+    );
+    
+    return cityRate ? cityRate.fee : settings.defaultFee;
+  } catch (error) {
+    console.error("Error calculating shipping fee:", error);
+    return 100; // Default fallback fee
+  }
+};
+
+// Create order
 exports.createOrder = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -14,7 +38,7 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ message: "Cart is empty" });
     }
 
-    let totalAmount = 0;
+    let subtotal = 0;
     const orderItems = [];
 
     // Check stock and prepare order items
@@ -28,7 +52,7 @@ exports.createOrder = async (req, res) => {
         });
       }
       
-      totalAmount += product.price * item.quantity;
+      subtotal += product.price * item.quantity;
       
       orderItems.push({
         product: product._id,
@@ -41,11 +65,18 @@ exports.createOrder = async (req, res) => {
       await product.save();
     }
 
+    // Calculate shipping fee based on city and subtotal
+    const city = shippingAddress?.city || "";
+    const shippingFee = await calculateShippingFee(city, subtotal);
+    const totalAmount = subtotal + shippingFee;
+
     // Create order
     const order = await Order.create({
       user: userId,
       items: orderItems,
-      totalAmount,
+      subtotal: subtotal,
+      shippingFee: shippingFee,
+      totalAmount: totalAmount,
       shippingAddress: shippingAddress || {},
       paymentMethod: paymentMethod || "cash",
       status: "pending",
@@ -75,7 +106,7 @@ exports.getMyOrders = async (req, res) => {
     const orders = await Order.find({ user: req.user.id })
       .populate("items.product", "title price image category")
       .populate("user", "name email")
-      .sort({ createdAt: -1 }); // Sort by newest first
+      .sort({ createdAt: -1 });
 
     res.json(orders);
   } catch (err) {
@@ -87,13 +118,13 @@ exports.getMyOrders = async (req, res) => {
   }
 };
 
-// Delete order (user can delete their own order)
+// Delete/Cancel order (user can cancel their own order)
 exports.deleteOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
     const userId = req.user.id;
 
-    // Find the order and check if it belongs to the user
+    // Find the order
     const order = await Order.findById(orderId);
     
     if (!order) {
@@ -102,19 +133,28 @@ exports.deleteOrder = async (req, res) => {
     
     // Check if order belongs to the user
     if (order.user.toString() !== userId) {
-      return res.status(403).json({ message: "You can only delete your own orders" });
+      return res.status(403).json({ message: "You can only cancel your own orders" });
     }
     
-    // Optional: Only allow deletion of pending orders
+    // Only allow cancellation of pending orders
     if (order.status !== "pending") {
-      return res.status(400).json({ message: "Only pending orders can be deleted" });
+      return res.status(400).json({ message: "Only pending orders can be cancelled" });
+    }
+    
+    // Restore stock when cancelling
+    for (const item of order.items) {
+      const product = await Product.findById(item.product);
+      if (product) {
+        product.stock += item.quantity;
+        await product.save();
+      }
     }
     
     await Order.findByIdAndDelete(orderId);
     
     res.json({ 
       success: true, 
-      message: "Order deleted successfully" 
+      message: "Order cancelled successfully" 
     });
   } catch (err) {
     console.error("DELETE ORDER ERROR:", err);
@@ -151,24 +191,37 @@ exports.getAllOrders = async (req, res) => {
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
+    const orderId = req.params.id;
 
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
-
-    if (!order)
+    const order = await Order.findById(orderId);
+    if (!order) {
       return res.status(404).json({ message: "Order not found" });
+    }
 
-    res.json(order);
+    // If cancelling, restore stock
+    if (status === "cancelled" && order.status !== "cancelled") {
+      for (const item of order.items) {
+        const product = await Product.findById(item.product);
+        if (product) {
+          product.stock += item.quantity;
+          await product.save();
+        }
+      }
+    }
+
+    order.status = status;
+    await order.save();
+
+    res.json({
+      success: true,
+      message: `Order status updated to ${status}`,
+      order,
+    });
   } catch (err) {
     console.error("UPDATE ORDER STATUS ERROR:", err);
-
     res.status(500).json({
       message: "Internal Server Error",
       error: err.message,
     });
   }
 };
-

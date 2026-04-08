@@ -3,13 +3,13 @@ const mongoose = require("mongoose");
 const orderSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "user",
+    ref: "User",
     required: true,
   },
   items: [{
     product: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "product",
+      ref: "Product",
       required: true,
     },
     quantity: {
@@ -21,6 +21,15 @@ const orderSchema = new mongoose.Schema({
       required: true,
     },
   }],
+  subtotal: {
+    type: Number,
+    required: true,
+  },
+  shippingFee: {
+    type: Number,
+    required: true,
+    default: 0,
+  },
   totalAmount: {
     type: Number,
     required: true,
@@ -47,4 +56,4 @@ const orderSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-module.exports = mongoose.model("order", orderSchema);
+module.exports = mongoose.model("Order", orderSchema);

@@ -305,3 +305,94 @@
   border-radius: 8px;
   border: 1px solid var(--border-color);
 }
+
+/* Shipping Settings Styles */
+.settings-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.settings-card h2 {
+  margin-bottom: 1rem;
+  color: var(--secondary-color);
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 0.5rem;
+}
+
+.setting-group {
+  margin-bottom: 1rem;
+}
+
+.setting-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.setting-group input[type="number"] {
+  width: 250px;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.setting-group input[type="checkbox"] {
+  width: auto;
+  margin-right: 0.5rem;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.add-city-form {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.add-city-form h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.add-city-form .form-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.add-city-form input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.add-city-form button {
+  background: var(--success-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.preview-table {
+  overflow-x: auto;
+}
+
+.preview-table .highlight {
+  background: #e8f5e9;
+  font-weight: bold;
+  color: #2e7d32;
+}
