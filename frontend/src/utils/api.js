@@ -29,6 +29,13 @@ export const endpoints = {
     login: '/api/auth/login',
     updateProfile: '/api/auth/update-profile',
     changePassword: '/api/auth/change-password',
+    addresses: {
+      getAll: '/api/auth/addresses',
+      add: '/api/auth/addresses',
+      update: (id) => `/api/auth/addresses/${id}`,
+      delete: (id) => `/api/auth/addresses/${id}`,
+      setDefault: (id) => `/api/auth/addresses/${id}/default`,
+    }
   },
   
   // Product endpoints
@@ -82,6 +89,13 @@ export const endpoints = {
       getAll: '/api/admin/users',
       updateRole: (id) => `/api/admin/users/${id}/role`,
       delete: (id) => `/api/admin/users/${id}`,
+    },
+    shippingSettings: {
+      get: '/api/admin/shipping-settings',
+      update: '/api/admin/shipping-settings',
+      addCity: '/api/admin/shipping-settings/city',
+      updateCity: (cityId) => `/api/admin/shipping-settings/city/${cityId}`,
+      deleteCity: (cityId) => `/api/admin/shipping-settings/city/${cityId}`,
     }
   },
   
