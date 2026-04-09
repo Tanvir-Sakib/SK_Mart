@@ -78,15 +78,6 @@ const Orders = () => {
     alert("Order removed from your history view.");
   };
 
-  // Clear all hidden orders (reset view)
-  const handleClearHistory = () => {
-    if (window.confirm("Show all orders again?")) {
-      setHiddenOrders([]);
-      localStorage.removeItem('hiddenOrders');
-      alert("All orders are visible again.");
-    }
-  };
-
   // Get visible orders (exclude hidden ones)
   const visibleOrders = orders.filter(order => !hiddenOrders.includes(order._id));
 
@@ -123,11 +114,7 @@ const Orders = () => {
     <div className="orders-container">
       <div className="orders-header">
         <h1>My Orders</h1>
-        {hiddenOrders.length > 0 && (
-          <button className="reset-history-btn" onClick={handleClearHistory}>
-            🔄 Show All Orders
-          </button>
-        )}
+
       </div>
       
       {!visibleOrders || visibleOrders.length === 0 ? (
