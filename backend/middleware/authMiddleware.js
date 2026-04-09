@@ -26,11 +26,13 @@ const authMiddleware = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     req.user = {
-      id: decoded.id || decoded._id
+      id: decoded.id || decoded._id,
+      role: decoded.role
     };
 
     console.log("User authenticated:", req.user.id);
-
+    console.log("User role:", req.user.role);
+    
     next();
   } catch (err) {
     console.error("Token verification failed:", err.message);
