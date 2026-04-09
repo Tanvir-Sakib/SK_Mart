@@ -60,6 +60,7 @@ const Invoice = ({ order, onClose }) => {
           <table className="invoice-table">
             <thead>
               <tr>
+                <th>SL</th>
                 <th>Item</th>
                 <th>Description</th>
                 <th>Quantity</th>
@@ -89,7 +90,14 @@ const Invoice = ({ order, onClose }) => {
             </div>
             <div className="summary-row">
               <span>Shipping:</span>
-              <span>Free</span>
+               <span>Shipping Fee:</span>
+              <span>
+                {order.shippingFee === 0 ? (
+                  <span className="free-shipping-text">Free</span>
+                ) : (
+                  `৳ ${order.shippingFee || 0}`
+                )}
+              </span>
             </div>
             <div className="summary-row total">
               <span>Total:</span>

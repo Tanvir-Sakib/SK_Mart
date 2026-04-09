@@ -288,11 +288,6 @@ const Checkout = () => {
                   )}
                 </span>
               </div>
-              {/* {shippingFeeDetails && shippingFee > 0 && (
-                <div className="shipping-details">
-                  <small>{shippingFeeDetails}</small>
-                </div>
-              )} */}
               <div className="summary-row total">
                 <span>Total:</span>
                 <span>৳ {calculateTotal()}</span>
