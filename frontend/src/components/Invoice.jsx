@@ -86,10 +86,9 @@ const Invoice = ({ order, onClose }) => {
           <div className="invoice-summary">
             <div className="summary-row">
               <span>Subtotal:</span>
-              <span>{formatPrice(order.totalAmount)}</span>
+              <span>{formatPrice(order.subtotal || order.totalAmount || 0)}</span>
             </div>
             <div className="summary-row">
-              <span>Shipping:</span>
                <span>Shipping Fee:</span>
               <span>
                 {order.shippingFee === 0 ? (
@@ -101,7 +100,7 @@ const Invoice = ({ order, onClose }) => {
             </div>
             <div className="summary-row total">
               <span>Total:</span>
-              <span>{formatPrice(order.totalAmount)}</span>
+              <span>{formatPrice(order.totalAmount || order.total || 0)}</span>
              
             </div>
           </div>

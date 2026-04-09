@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import { apiClient, endpoints, getImageUrl } from "../utils/api";
-
+import { formatPrice } from "../utils/currency";
 const Checkout = () => {
   const { cart, cartCount, clearCart } = useContext(CartContext);
   const { token } = useContext(AuthContext);
@@ -276,7 +276,7 @@ const Checkout = () => {
             <div className="summary-totals">
               <div className="summary-row">
                 <span>Subtotal:</span>
-                <span>৳ {calculateSubtotal()}</span>
+                <span> {formatPrice(calculateSubtotal())}</span>
               </div>
               <div className="summary-row shipping-fee">
                 <span>Shipping Fee:</span>
@@ -284,13 +284,13 @@ const Checkout = () => {
                   {shippingFee === 0 ? (
                     <span className="free-shipping">Free Shipping!</span>
                   ) : (
-                    `৳ ${shippingFee}`
+                    ` ${formatPrice(shippingFee)}`
                   )}
                 </span>
               </div>
               <div className="summary-row total">
                 <span>Total:</span>
-                <span>৳ {calculateTotal()}</span>
+                <span> {formatPrice(calculateTotal())}</span>
               </div>
             </div>
             <button className="place-order-btn" onClick={handlePlaceOrder} disabled={loading}>
