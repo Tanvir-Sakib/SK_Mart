@@ -1221,13 +1221,17 @@ body {
 }
 
 .cancel-order-btn {
-  background: #dc3545;
-  color: white;
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
   transition: all 0.3s ease;
+}
+.cancel-order-btn {
+  background: #dc3545;
+  color: white;
 }
 
 .cancel-order-btn:hover:not(:disabled) {
@@ -1238,6 +1242,7 @@ body {
 .cancel-order-btn:disabled {
   background: #6c757d;
   cursor: not-allowed;
+  transform: none;
 }
 
 /* Order footer layout */
@@ -1271,34 +1276,23 @@ body {
   gap: 1rem;
 }
 
-.reset-history-btn {
-  background: #17a2b8;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.3s ease;
-}
-
-.reset-history-btn:hover {
-  background: #138496;
-  transform: translateY(-1px);
-}
-
 .hide-order-btn {
-  background: #6c757d;
-  color: white;
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
   transition: all 0.3s ease;
+}
+.hide-order-btn {
+  background: #6c757d;
+  color: white;
 }
 
 .hide-order-btn:hover {
   background: #5a6268;
+  transform: translateY(-1px);
 }
 
 .order-actions {
