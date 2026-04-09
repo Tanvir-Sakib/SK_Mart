@@ -239,8 +239,7 @@ const Checkout = () => {
                 <div className="form-group">
                   <label>City *</label>
                   <input type="text" name="city" value={shippingDetails.city} onChange={handleInputChange} required 
-                    placeholder="Enter your city for shipping calculation" />
-                  <small className="shipping-hint">Shipping fee calculated based on city</small>
+                    placeholder="Enter city" />
                 </div>
                 <div className="form-group">
                   <label>Postal Code</label>
@@ -283,17 +282,17 @@ const Checkout = () => {
                 <span>Shipping Fee:</span>
                 <span>
                   {shippingFee === 0 ? (
-                    <span className="free-shipping">Free Shipping! 🎉</span>
+                    <span className="free-shipping">Free Shipping!</span>
                   ) : (
                     `৳ ${shippingFee}`
                   )}
                 </span>
               </div>
-              {shippingFeeDetails && shippingFee > 0 && (
+              {/* {shippingFeeDetails && shippingFee > 0 && (
                 <div className="shipping-details">
                   <small>{shippingFeeDetails}</small>
                 </div>
-              )}
+              )} */}
               <div className="summary-row total">
                 <span>Total:</span>
                 <span>৳ {calculateTotal()}</span>
