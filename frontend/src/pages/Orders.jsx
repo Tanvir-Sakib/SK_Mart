@@ -9,9 +9,15 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [cancellingId, setCancellingId] = useState(null); // Add this
+  const [cancellingId, setCancellingId] = useState(null);
+  const [hiddenOrders, setHiddenOrders] = useState([]);
 
   useEffect(() => {
+    // Load hidden orders from localStorage
+    const savedHidden = localStorage.getItem('hiddenOrders');
+    if (savedHidden) {
+      setHiddenOrders(JSON.parse(savedHidden));
+    }
     fetchOrders();
   }, []);
 
@@ -37,7 +43,7 @@ const Orders = () => {
     }
   };
 
-  // Add delete/cancel order function
+  // Cancel order (deletes from database)
   const handleCancelOrder = async (orderId) => {
     const confirmed = window.confirm(
       "Are you sure you want to cancel this order? This action cannot be undone."
@@ -50,8 +56,6 @@ const Orders = () => {
     try {
       await apiClient.delete(`${endpoints.orders.myOrders}/${orderId}`);
       alert("Order cancelled successfully!");
-      
-      // Remove the cancelled order from state or refresh
       setOrders(orders.filter(order => order._id !== orderId));
     } catch (error) {
       console.error("Error cancelling order:", error);
@@ -60,6 +64,31 @@ const Orders = () => {
       setCancellingId(null);
     }
   };
+
+  // Hide order from UI only (not delete from database)
+  const handleHideOrder = (orderId) => {
+    const confirmed = window.confirm("Remove this order from your history view?");
+    
+    if (!confirmed) return;
+    
+    const updatedHidden = [...hiddenOrders, orderId];
+    setHiddenOrders(updatedHidden);
+    localStorage.setItem('hiddenOrders', JSON.stringify(updatedHidden));
+    
+    alert("Order removed from your history view.");
+  };
+
+  // Clear all hidden orders (reset view)
+  const handleClearHistory = () => {
+    if (window.confirm("Show all orders again?")) {
+      setHiddenOrders([]);
+      localStorage.removeItem('hiddenOrders');
+      alert("All orders are visible again.");
+    }
+  };
+
+  // Get visible orders (exclude hidden ones)
+  const visibleOrders = orders.filter(order => !hiddenOrders.includes(order._id));
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -92,9 +121,16 @@ const Orders = () => {
 
   return (
     <div className="orders-container">
-      <h1>My Orders</h1>
+      <div className="orders-header">
+        <h1>My Orders</h1>
+        {hiddenOrders.length > 0 && (
+          <button className="reset-history-btn" onClick={handleClearHistory}>
+            🔄 Show All Orders
+          </button>
+        )}
+      </div>
       
-      {!orders || orders.length === 0 ? (
+      {!visibleOrders || visibleOrders.length === 0 ? (
         <div className="no-orders">
           <div className="no-orders-icon">📦</div>
           <h2>No Orders Yet</h2>
@@ -105,7 +141,7 @@ const Orders = () => {
         </div>
       ) : (
         <div className="orders-list">
-          {orders.map((order) => (
+          {visibleOrders.map((order) => (
             <div key={order._id} className="order-card">
               <div className="order-header">
                 <div className="order-info">
@@ -161,6 +197,12 @@ const Orders = () => {
                 <div className="order-actions">
                   <button className="invoice-btn" onClick={() => handleDownloadInvoice(order)}>
                     📄 Download Invoice
+                  </button>
+                  <button 
+                    className="hide-order-btn"
+                    onClick={() => handleHideOrder(order._id)}
+                  >
+                    🗑️ Remove from History
                   </button>
                   {order.status === "pending" && (
                     <button 
