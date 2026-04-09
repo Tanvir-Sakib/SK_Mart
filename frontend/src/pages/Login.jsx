@@ -1,8 +1,7 @@
-import React,{ useState, useContext } from "react";
+import React, { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
-import { apiClient, endpoints } from '../utils/api';
+import { apiClient, endpoints } from "../utils/api";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -18,22 +17,22 @@ const Login = () => {
     setLoading(true);
 
     try {
+      console.log("Attempting login for:", email);
+      
       const response = await apiClient.post(endpoints.auth.login, {
         email,
         password
       });
-      
+
       console.log("Login response:", response.data);
-      
+
       if (response.data.token) {
-        // Store complete user data
         const userData = {
           id: response.data.id,
           name: response.data.name,
           email: response.data.email,
           role: response.data.role
         };
-        
         login(response.data.token, userData);
         
         // Redirect based on role
@@ -44,7 +43,9 @@ const Login = () => {
         }
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
+      console.error("Login error:", err);
+      console.error("Error response:", err.response?.data);
+      setError(err.response?.data?.message || "Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }

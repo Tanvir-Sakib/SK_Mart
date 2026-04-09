@@ -10,7 +10,6 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -39,60 +38,54 @@ const Register = () => {
     }
 
     try {
-      console.log("Registering with:", { name, email, password });
+      console.log("Attempting registration for:", email);
       
-      const response = await apiClient.post(endpoints.auth.register, {
+      // Step 1: Register
+      const registerResponse = await apiClient.post(endpoints.auth.register, {
         name,
         email,
         password
       });
 
-      console.log("Registration response:", response.data);
+      console.log("Registration response:", registerResponse.data);
 
-      if (response.data.success) {
-        setSuccess(true);
+      if (registerResponse.data.success) {
+        // Step 2: Auto login after successful registration
+        console.log("Registration successful, attempting auto-login...");
         
-        // Auto login after registration
-        try {
-          const loginResponse = await apiClient.post(endpoints.auth.login, {
-            email,
-            password
-          });
+        const loginResponse = await apiClient.post(endpoints.auth.login, {
+          email,
+          password
+        });
 
-          if (loginResponse.data.token) {
-            const userData = {
-              id: loginResponse.data.id,
-              name: loginResponse.data.name,
-              email: loginResponse.data.email,
-              role: loginResponse.data.role
-            };
-            login(loginResponse.data.token, userData);
-            navigate("/");
-          }
-        } catch (loginErr) {
-          console.error("Auto login failed:", loginErr);
-          navigate("/login");
+        console.log("Login response:", loginResponse.data);
+
+        if (loginResponse.data.token) {
+          const userData = {
+            id: loginResponse.data.id,
+            name: loginResponse.data.name,
+            email: loginResponse.data.email,
+            role: loginResponse.data.role
+          };
+          login(loginResponse.data.token, userData);
+          navigate("/");
         }
       }
     } catch (err) {
       console.error("Registration error:", err);
       console.error("Error response:", err.response?.data);
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
+      
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.response?.data?.errors) {
+        setError(Object.values(err.response.data.errors).join(", "));
+      } else {
+        setError("Registration failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
   };
-
-  if (success) {
-    return (
-      <div className="auth-container">
-        <div className="auth-card">
-          <h2>Registration Successful!</h2>
-          <p>Redirecting you to the homepage...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="auth-container">
