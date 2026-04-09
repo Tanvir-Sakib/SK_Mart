@@ -2446,3 +2446,27 @@ body {
   margin: 10px 0;
   color: #666;
 }
+/* Shipping Fee Styles */
+.shipping-fee {
+  color: var(--text-dark);
+}
+
+.free-shipping {
+  color: var(--success-color);
+  font-weight: bold;
+}
+
+.shipping-details {
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--text-light);
+  margin-top: -10px;
+  margin-bottom: 10px;
+}
+
+.shipping-hint {
+  font-size: 0.7rem;
+  color: var(--text-light);
+  display: block;
+  margin-top: 4px;
+}

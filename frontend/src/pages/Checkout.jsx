@@ -12,6 +12,9 @@ const Checkout = () => {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState("");
+  const [shippingSettings, setShippingSettings] = useState(null);
+  const [shippingFee, setShippingFee] = useState(0);
+  const [shippingFeeDetails, setShippingFeeDetails] = useState("");
 
   const [shippingDetails, setShippingDetails] = useState({
     fullName: "",
@@ -24,10 +27,27 @@ const Checkout = () => {
 
   const [paymentMethod, setPaymentMethod] = useState("cash");
 
-  // Fetch saved addresses on load
+  // Fetch saved addresses and shipping settings on load
   useEffect(() => {
     fetchSavedAddresses();
+    fetchShippingSettings();
   }, []);
+
+  // Recalculate shipping fee when city or subtotal changes
+  useEffect(() => {
+    if (shippingSettings && shippingDetails.city) {
+      calculateShippingFee();
+    }
+  }, [shippingDetails.city, cart, shippingSettings]);
+
+  const fetchShippingSettings = async () => {
+    try {
+      const response = await apiClient.get(endpoints.admin.shippingSettings.get);
+      setShippingSettings(response.data);
+    } catch (error) {
+      console.error("Error fetching shipping settings:", error);
+    }
+  };
 
   const fetchSavedAddresses = async () => {
     try {
@@ -52,6 +72,44 @@ const Checkout = () => {
     }
   };
 
+  const calculateSubtotal = () => {
+    if (!cart.items) return 0;
+    return cart.items.reduce((total, item) => {
+      return total + (item.product?.price || 0) * item.quantity;
+    }, 0);
+  };
+
+  const calculateShippingFee = () => {
+    if (!shippingSettings) return;
+    
+    const subtotal = calculateSubtotal();
+    const city = shippingDetails.city;
+    
+    // Check free shipping threshold
+    if (shippingSettings.freeShippingEnabled && subtotal >= shippingSettings.freeShippingThreshold) {
+      setShippingFee(0);
+      setShippingFeeDetails(`Free Shipping (Order over ৳${shippingSettings.freeShippingThreshold})`);
+      return;
+    }
+    
+    // Find city rate
+    const cityRate = shippingSettings.cityRates?.find(
+      rate => rate.city.toLowerCase() === city?.toLowerCase()
+    );
+    
+    if (cityRate) {
+      setShippingFee(cityRate.fee);
+      setShippingFeeDetails(`Shipping to ${city}: ৳${cityRate.fee}`);
+    } else {
+      setShippingFee(shippingSettings.defaultFee || 100);
+      setShippingFeeDetails(`Standard Shipping: ৳${shippingSettings.defaultFee || 100}`);
+    }
+  };
+
+  const calculateTotal = () => {
+    return calculateSubtotal() + shippingFee;
+  };
+
   const handleSelectAddress = (addressId) => {
     const address = savedAddresses.find(addr => addr._id === addressId);
     if (address) {
@@ -67,19 +125,11 @@ const Checkout = () => {
     }
   };
 
-  const calculateTotal = () => {
-    if (!cart.items) return 0;
-    return cart.items.reduce((total, item) => {
-      return total + (item.product?.price || 0) * item.quantity;
-    }, 0);
-  };
-
   const handleInputChange = (e) => {
     setShippingDetails({
       ...shippingDetails,
       [e.target.name]: e.target.value
     });
-    // Clear selected address when user manually edits
     setSelectedAddressId("");
   };
 
@@ -95,6 +145,9 @@ const Checkout = () => {
     setLoading(true);
     
     try {
+      const subtotal = calculateSubtotal();
+      const total = subtotal + shippingFee;
+      
       const orderData = {
         shippingAddress: shippingDetails,
         paymentMethod: paymentMethod,
@@ -103,7 +156,9 @@ const Checkout = () => {
           quantity: item.quantity,
           price: item.product.price
         })),
-        totalAmount: calculateTotal()
+        subtotal: subtotal,
+        shippingFee: shippingFee,
+        totalAmount: total
       };
 
       await apiClient.post(endpoints.orders.create, orderData);
@@ -183,7 +238,9 @@ const Checkout = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label>City *</label>
-                  <input type="text" name="city" value={shippingDetails.city} onChange={handleInputChange} required />
+                  <input type="text" name="city" value={shippingDetails.city} onChange={handleInputChange} required 
+                    placeholder="Enter your city for shipping calculation" />
+                  <small className="shipping-hint">Shipping fee calculated based on city</small>
                 </div>
                 <div className="form-group">
                   <label>Postal Code</label>
@@ -218,9 +275,29 @@ const Checkout = () => {
               ))}
             </div>
             <div className="summary-totals">
-              <div className="summary-row"><span>Subtotal:</span><span>৳ {calculateTotal()}</span></div>
-              <div className="summary-row"><span>Shipping:</span><span>Free</span></div>
-              <div className="summary-row total"><span>Total:</span><span>৳ {calculateTotal()}</span></div>
+              <div className="summary-row">
+                <span>Subtotal:</span>
+                <span>৳ {calculateSubtotal()}</span>
+              </div>
+              <div className="summary-row shipping-fee">
+                <span>Shipping Fee:</span>
+                <span>
+                  {shippingFee === 0 ? (
+                    <span className="free-shipping">Free Shipping! 🎉</span>
+                  ) : (
+                    `৳ ${shippingFee}`
+                  )}
+                </span>
+              </div>
+              {shippingFeeDetails && shippingFee > 0 && (
+                <div className="shipping-details">
+                  <small>{shippingFeeDetails}</small>
+                </div>
+              )}
+              <div className="summary-row total">
+                <span>Total:</span>
+                <span>৳ {calculateTotal()}</span>
+              </div>
             </div>
             <button className="place-order-btn" onClick={handlePlaceOrder} disabled={loading}>
               {loading ? "Placing Order..." : "Place Order"}
