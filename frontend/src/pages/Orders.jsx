@@ -67,15 +67,13 @@ const Orders = () => {
 
   // Hide order from UI only (not delete from database)
   const handleHideOrder = (orderId) => {
-    const confirmed = window.confirm("Remove this order from your history view?");
+    const confirmed = window.confirm("Remove this order from your history?");
     
     if (!confirmed) return;
     
     const updatedHidden = [...hiddenOrders, orderId];
     setHiddenOrders(updatedHidden);
     localStorage.setItem('hiddenOrders', JSON.stringify(updatedHidden));
-    
-    alert("Order removed from your history view.");
   };
 
   // Get visible orders (exclude hidden ones)
