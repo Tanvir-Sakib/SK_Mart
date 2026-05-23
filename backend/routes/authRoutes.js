@@ -84,13 +84,13 @@ router.put("/change-password", authMiddleware, async (req, res) => {
     }
 
     // Hash and update password manually
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    user.password = newPassword;
     await user.save();
 
     console.log("Password changed successfully for user:", userId);
     res.json({ message: "Password changed successfully" });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error("Change password error:", error);
     res.status(500).json({ message: error.message });
   }
