@@ -26,7 +26,7 @@ router.get("/", async (req, res) => {
       maxPrice, 
       sort,
       page = 1,
-      limit = 12 
+      limit = 100 
     } = req.query;
 
     let query = {};
